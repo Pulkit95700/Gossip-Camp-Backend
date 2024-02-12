@@ -20,5 +20,8 @@ app.use(cookieParser());
 
 // routes declaration
 app.use("/api/v1/users", userRouter);
+app.get("/", (req, res) => {
+  res.json({ message: "Server is running" });
+});
 
 export { app };
