@@ -25,7 +25,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     // check if the room already exisits for the current college name
-    let room = await Room.findOne({ collegeName: collegeName });
+    let room = await Room.findOne({ roomName: collegeName });
 
     if (!room) {
       room = new Room({ roomType: "College", roomName: collegeName });
