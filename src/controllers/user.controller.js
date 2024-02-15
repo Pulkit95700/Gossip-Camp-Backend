@@ -106,7 +106,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
     // setting the refresh and accesstoken in cookies
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
+      secure: true
     };
 
     res.cookie("refreshToken", refreshToken, options);
