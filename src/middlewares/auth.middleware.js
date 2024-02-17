@@ -49,7 +49,7 @@ const auth = async (req, res, next) => {
 
     next();
   } catch (err) {
-    return res.status(500).json(new ApiResponse(500, null, err.message));
+    return res.status(401).json(new ApiResponse(401, null, err.message));
   }
 };
 
