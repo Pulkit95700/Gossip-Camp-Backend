@@ -43,13 +43,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
     await JoinRoom.create({ user: user, room: room });
 
     // setting the refresh and accesstoken in cookies
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
-    };
+    // const options = {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production" ? true : false,
+    // };
 
-    res.cookie("refreshToken", refreshToken, options);
-    res.cookie("accessToken", accessToken, options);
+    // res.cookie("refreshToken", refreshToken, options);
+    // res.cookie("accessToken", accessToken, options);
 
     user.password = undefined;
     user.refreshToken = undefined;
@@ -104,13 +104,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // setting the refresh and accesstoken in cookies
-    const options = {
-      httpOnly: true,
-      secure: true
-    };
+    // const options = {
+    //   httpOnly: true,
+    //   secure: true,
+    // };
 
-    res.cookie("refreshToken", refreshToken, options);
-    res.cookie("accessToken", accessToken, options);
+    // res.cookie("refreshToken", refreshToken, options);
+    // res.cookie("accessToken", accessToken, options);
 
     user.password = undefined;
     user.refreshToken = undefined;
@@ -152,8 +152,8 @@ const logoutUser = asyncHandler(async (req, res, next) => {
     user.refreshToken = undefined;
     await user.save();
 
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
+    // res.clearCookie("refreshToken");
+    // res.clearCookie("accessToken");
 
     return res
       .status(200)
@@ -166,7 +166,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 // refresh token route
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.cookies;
+    const { refreshToken } = req.body;
     const user = await User.findOne({ refreshToken: refreshToken });
 
     if (!user) {
@@ -178,17 +178,17 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     let accessToken = user.generateAccessToken();
     let refreshTokenNew = user.generateRefreshToken();
 
-    user.refreshToke = refreshTokenNew;
+    user.refreshToken = refreshTokenNew;
     await user.save();
 
     // setting the refresh and accesstoken in cookies
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
-    };
+    // const options = {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production" ? true : false,
+    // };
 
-    res.cookie("refreshToken", refreshTokenNew, options);
-    res.cookie("accessToken", accessToken, options);
+    // res.cookie("refreshToken", refreshTokenNew, options);
+    // res.cookie("accessToken", accessToken, options);
 
     return res
       .status(200)
@@ -231,6 +231,22 @@ const changePassword = asyncHandler(async (req, res, next) => {
     return res
       .status(200)
       .json(new ApiResponse(200, null, "Password changed successfully"));
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
+const getUserData = asyncHandler(async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "User not logged in"));
+    }
+
+    return res.status(200).json(new ApiResponse(200, user, "User data fetched"));
   } catch (err) {
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
