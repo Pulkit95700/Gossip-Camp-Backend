@@ -166,7 +166,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     if (!user) {
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "User not logged in"));
+        .json(new ApiResponse(400, null, "Refresh Token not valid"));
     }
 
     let accessToken = user.generateAccessToken();
