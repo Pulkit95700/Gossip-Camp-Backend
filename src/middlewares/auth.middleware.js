@@ -1,15 +1,21 @@
+import { User } from "../models/user.model";
+
 const auth = async (req, res, next) => {
   try {
     // check the access token and refresh token in cookies and set the user to req.user
-    const accessToken = req.cookies.accessToken
-      ? req.cookies.accessToken
-      : null;
+    const authHeader = req.headers.authorization; // Bearer token
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-    const refreshToken = req.cookies.refreshToken
-      ? req.cookies.refreshToken
-      : null;
+    const accessToken = authHeader.split(' ')[1];
 
-    if (!accessToken || !refreshToken) {
+    // const refreshToken = req.cookies.refreshToken
+    //   ? req.cookies.refreshToken
+    //   : null;
+
+    if (!accessToken) {
       return res
         .status(400)
         .json(new ApiResponse(400, null, "User not logged in"));
@@ -34,6 +40,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+
     next();
   } catch (err) {
     return res.status(500).json(new ApiResponse(500, null, err.message));
