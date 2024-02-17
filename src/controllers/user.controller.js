@@ -143,12 +143,6 @@ const logoutUser = asyncHandler(async (req, res, next) => {
   try {
     const user = req.user;
 
-    if (!user) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, null, "User not logged in"));
-    }
-
     user.refreshToken = undefined;
     await user.save();
 
