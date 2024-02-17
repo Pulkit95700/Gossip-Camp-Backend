@@ -22,7 +22,7 @@ const auth = async (req, res, next) => {
     if (!accessToken) {
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "User not logged in"));
+        .json(new ApiResponse(400, null, "Token  not found"));
     }
 
     // decode and verify the access token
@@ -32,8 +32,8 @@ const auth = async (req, res, next) => {
 
     if (!decodedAccessToken) {
       return res
-        .status(400)
-        .json(new ApiResponse(400, null, "User not logged in"));
+        .status(401)
+        .json(new ApiResponse(400, null, "Token Expired"));
     }
 
     // check if the user exists
