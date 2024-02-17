@@ -1,9 +1,12 @@
-import { User } from "../models/user.model";
+import { User } from "../models/user.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 const auth = async (req, res, next) => {
   try {
     // check the access token and refresh token in cookies and set the user to req.user
     const authHeader = req.headers.authorization; // Bearer token
+    
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -15,6 +18,7 @@ const auth = async (req, res, next) => {
     //   ? req.cookies.refreshToken
     //   : null;
 
+    console.log(accessToken)
     if (!accessToken) {
       return res
         .status(400)
@@ -22,7 +26,9 @@ const auth = async (req, res, next) => {
     }
 
     // decode and verify the access token
-    const decodedAccessToken = jwt.verify(accessToken, process.env.JWT_SECRET);
+    const decodedAccessToken = await jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+
+    // console.log(decodedAccessToken)
 
     if (!decodedAccessToken) {
       return res
@@ -31,12 +37,12 @@ const auth = async (req, res, next) => {
     }
 
     // check if the user exists
-    const user = await User.findById(decodedAccessToken.id);
+    const user = await User.findById(decodedAccessToken._id);
 
     if (!user) {
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "User not logged in"));
+        .json(new ApiResponse(400, null, "User not found"));
     }
 
     req.user = user;
