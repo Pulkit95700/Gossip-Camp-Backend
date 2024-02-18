@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { JoinRoom, Room } from "../models/room.model.js";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -104,13 +105,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // setting the refresh and accesstoken in cookies
-    // const options = {
-    //   httpOnly: true,
-    //   secure: true,
-    // };
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
 
-    // res.cookie("refreshToken", refreshToken, options);
-    // res.cookie("accessToken", accessToken, options);
+    res.cookie("refreshToken", refreshToken, options);
+    res.cookie("accessToken", accessToken, options);
 
     user.password = undefined;
     user.refreshToken = undefined;
@@ -146,8 +147,8 @@ const logoutUser = asyncHandler(async (req, res, next) => {
     user.refreshToken = undefined;
     await user.save();
 
-    // res.clearCookie("refreshToken");
-    // res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
 
     return res
       .status(200)
@@ -164,9 +165,28 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ refreshToken: refreshToken });
 
     if (!user) {
+      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken");
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token not valid"));
+        .json(new ApiResponse(400, null, "Refresh Token is not valid"));
+    }
+
+    const decodedRefreshToken = await jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    if (!decodedRefreshToken) {
+      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken");
+
+      user.refreshToken = undefined;
+      await user.save();
+
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Refresh Token Expired"));
     }
 
     let accessToken = user.generateAccessToken();
@@ -176,13 +196,13 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // setting the refresh and accesstoken in cookies
-    // const options = {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production" ? true : false,
-    // };
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+    };
 
-    // res.cookie("refreshToken", refreshTokenNew, options);
-    // res.cookie("accessToken", accessToken, options);
+    res.cookie("refreshToken", refreshTokenNew, options);
+    res.cookie("accessToken", accessToken, options);
 
     return res
       .status(200)
@@ -194,6 +214,8 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
         )
       );
   } catch (err) {
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
 });
@@ -240,7 +262,9 @@ const getUserData = asyncHandler(async (req, res, next) => {
         .json(new ApiResponse(400, null, "User not logged in"));
     }
 
-    return res.status(200).json(new ApiResponse(200, user, "User data fetched"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "User data fetched"));
   } catch (err) {
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
