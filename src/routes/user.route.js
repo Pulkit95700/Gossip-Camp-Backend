@@ -6,10 +6,10 @@ import {
   refreshUserToken,
   registerUser,
   createProfile,
-} from "../../controllers/user.controller.js";
-import { registerUserValidator } from "../../validators/user.validator.js";
-import { validate } from "../../middlewares/validate.middleware.js";
-import auth from "../../middlewares/auth.middleware.js";
+} from "../controllers/user.controller.js";
+import { registerUserValidator } from "../validators/user.validator.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import auth from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
