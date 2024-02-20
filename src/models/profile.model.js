@@ -6,12 +6,12 @@ const profileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    fname: {
+    fName: {
       type: String,
       required: true,
       trim: true,
     },
-    lname: {
+    lName: {
       type: String,
       required: true,
       trim: true,
