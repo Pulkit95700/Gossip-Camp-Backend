@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 // routes imports
-import { router as userRouter } from "./routes/user.route.js";
+import { router as userRouter } from "./models/routes/user.route.js";
 
 const app = express();
 app.use(

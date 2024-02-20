@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { JoinRoom, Room } from "../models/room.model.js";
 import jwt from "jsonwebtoken";
+import { Profile } from "../models/profile.model.js";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -265,6 +266,27 @@ const getUserData = asyncHandler(async (req, res, next) => {
     return res
       .status(200)
       .json(new ApiResponse(200, user, "User data fetched"));
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
+const createProfile = asyncHandler(async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { fname, lname, avatarUrl } = req.body;
+    const username = fname + lname;
+    const profile = await Profile.create({
+      user,
+      fname,
+      lname,
+      username,
+      avatar: avatarUrl,
+    });
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, profile, "Profile created successfully"));
   } catch (err) {
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
