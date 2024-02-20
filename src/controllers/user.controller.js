@@ -274,7 +274,7 @@ const getUserData = asyncHandler(async (req, res, next) => {
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
     const { fName, lName, avatarUrl } = req.body;
-    const username = fname + " " + lname;
+    const username = fName + " " + lName;
 
     // check if user name already exists
     let presentProfile = await Profile.findOne({ username: username });
