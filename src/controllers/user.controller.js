@@ -273,7 +273,6 @@ const getUserData = asyncHandler(async (req, res, next) => {
 
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
-    const user = req.user;
     const { fname, lname, avatarUrl } = req.body;
     const username = fname + " " + lname;
 
@@ -293,7 +292,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
     }
 
     const profile = await Profile.create({
-      user,
+      user: req.user._id,
       fname,
       lname,
       username,
