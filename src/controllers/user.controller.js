@@ -298,4 +298,5 @@ export {
   logoutUser,
   refreshUserToken,
   changePassword,
+  createProfile
 };
