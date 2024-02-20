@@ -117,12 +117,16 @@ const loginUser = asyncHandler(async (req, res, next) => {
     user.password = undefined;
     user.refreshToken = undefined;
 
+    const profile = await Profile.findOne({ user: user._id }).select(
+      "fName lName username avatar bio"
+    );
+
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { user, accessToken, refreshToken },
+          { user, profile, accessToken, refreshToken },
           "User logged in successfully"
         )
       );
@@ -140,7 +144,6 @@ const setUserProfile = asyncHandler(async (req, res, next) => {
 });
 
 // logut user route
-
 const logoutUser = asyncHandler(async (req, res, next) => {
   try {
     const user = req.user;
@@ -277,7 +280,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
     const username = fName + " " + lName;
 
     // check if user name already exists
-    let presentProfile = await Profile.findOne({ username: username });
+    let presentProfile = await Profile.findOne({ user: req.user._id });
 
     if (presentProfile) {
       return res
@@ -291,7 +294,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
         );
     }
 
-    const profile = await Profile.create({
+    await Profile.create({
       user: req.user._id,
       fName,
       lName,
