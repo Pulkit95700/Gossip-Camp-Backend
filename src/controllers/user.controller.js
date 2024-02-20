@@ -275,7 +275,23 @@ const createProfile = asyncHandler(async (req, res, next) => {
   try {
     const user = req.user;
     const { fname, lname, avatarUrl } = req.body;
-    const username = fname + lname;
+    const username = fname + " " + lname;
+
+    // check if user name already exists
+    let presentProfile = await Profile.findOne({ username: username });
+
+    if (presentProfile) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Profile already exists with this username"
+          )
+        );
+    }
+
     const profile = await Profile.create({
       user,
       fname,
@@ -298,5 +314,5 @@ export {
   logoutUser,
   refreshUserToken,
   changePassword,
-  createProfile
+  createProfile,
 };
