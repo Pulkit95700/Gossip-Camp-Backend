@@ -299,9 +299,19 @@ const createProfile = asyncHandler(async (req, res, next) => {
       avatar: avatarUrl,
     });
 
-    return res
-      .status(201)
-      .json(new ApiResponse(201, profile, "Profile created successfully"));
+    return res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          fName,
+          lName,
+          username,
+          avatar: avatarUrl,
+          bio: "",
+        },
+        "Profile created successfully"
+      )
+    );
   } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiResponse(500, null, err.message));
