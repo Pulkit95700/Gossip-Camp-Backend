@@ -192,50 +192,55 @@ const getPublicJoinedRooms = asyncHandler(async (req, res, next) => {
         $unwind: "$room",
       },
       {
-        // only get those rooms with roomType: User
+        // only show rooms with roomType = User
         $match: {
           "room.roomType": "User",
         },
       },
       {
+        // add a field in each Room to show the total number of participants
         $lookup: {
           from: "joinrooms",
           localField: "room._id",
           foreignField: "room",
-          as: "participants",
+          as: "totalParticipants",
         },
       },
       {
         $addFields: {
-          totalParticipants: {
-            $size: "$participants",
-          },
+          "room.totalParticipants": { $size: "$totalParticipants" },
         },
       },
       {
         $lookup: {
-          from: "profile",
+          from: "users",
           localField: "room.admin",
-          foreignField: "user",
+          foreignField: "_id",
           as: "admin",
         },
       },
       {
-        $project: {
-          participants: 0,
-          "room.createdAt": 0,
-          "room.updatedAt": 0,
-          "room.__v": 0,
+        $addFields: {
+          "room.admin": { $arrayElemAt: ["$admin", 0] },
         },
       },
-      // {
-      //   // set the adminField to adminName only.
-      //   $set: {
-      //     admin: {
-      //       $arrayElemAt: ["$admin.name", 0]
-      //     }
-      //   }
-      // },
+      {
+        $project: {
+          "room._id": 1,
+          "room.roomName": 1,
+          "room.roomDP": 1,
+          "room.description": 1,
+          "room.roomUsername": 1,
+          "room.admin": 1,
+          "room.totalParticipants": 1,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          room: 1,
+        },
+      },
     ]);
 
     return res.status(200).json(
@@ -267,8 +272,10 @@ const getPrivateJoinedRoom = asyncHandler(async (req, res, next) => {
       new ApiResponse(
         200,
         {
-          room,
-          totalParticipants: totalParticipants,
+          room: {
+            ...room._doc,
+            totalParticipants: totalParticipants,
+          },
         },
         "Private Room Fetched Successfully"
       )
