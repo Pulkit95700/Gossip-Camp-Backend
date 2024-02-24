@@ -21,7 +21,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
           new ApiResponse(
             400,
             null,
-            "User already exists with this enrollment number"
+            "User already exists with this enrollment number or mobile Number"
           )
         );
     }
@@ -34,7 +34,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
       await room.save();
     }
 
-    const user = new User({ enrollmentNo, mobileNo, password, collegeName });
+    const user = new User({
+      enrollmentNo,
+      mobileNo,
+      password,
+      collegeRoom: room._id,
+      collegeName,
+    });
 
     let refreshToken = user.generateRefreshToken();
     let accessToken = user.generateAccessToken();
@@ -117,7 +123,9 @@ const loginUser = asyncHandler(async (req, res, next) => {
     user.password = undefined;
     user.refreshToken = undefined;
 
-    const profile = await Profile.findOne({ user: user._id }).select(
+    // get the user profile flaws here
+
+    const profile = await Profile.findOne({ user: user._id })?.select(
       "fName lName username avatar bio"
     );
 
@@ -130,14 +138,6 @@ const loginUser = asyncHandler(async (req, res, next) => {
           "User logged in successfully"
         )
       );
-  } catch (err) {
-    return res.status(500).json(new ApiResponse(500, null, err.message));
-  }
-});
-// setting user profile route
-
-const setUserProfile = asyncHandler(async (req, res, next) => {
-  try {
   } catch (err) {
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
@@ -328,4 +328,5 @@ export {
   refreshUserToken,
   changePassword,
   createProfile,
+  getUserData,
 };

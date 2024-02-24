@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       minlength: 10,
-    },  
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+    collegeRoom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+    },
+
     collegeName: {
       type: String,
       required: true,
@@ -41,7 +46,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  } 
+  }
 );
 
 userSchema.pre("save", async function (next) {
