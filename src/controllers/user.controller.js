@@ -7,11 +7,13 @@ import { Profile } from "../models/profile.model.js";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
-    const { enrollmentNo, mobileNo, password, collegeName } = req.body;
-    // if user already exists then throw error (check with enrollmentNo and mobileNo)
+    let { enrollmentNo, password, collegeName } = req.body;
+    // if user already exists then throw error (check with enrollmentNo and username)
+
+    enrollmentNo = enrollmentNo.toLowerCase();
 
     let presentUser = await User.findOne({
-      $or: [{ mobileNo: mobileNo }, { enrollmentNo: enrollmentNo }],
+      enrollmentNo: enrollmentNo,
     });
 
     if (presentUser) {
@@ -21,7 +23,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
           new ApiResponse(
             400,
             null,
-            "User already exists with this enrollment number or mobile Number"
+            "User already exists with this enrollment number"
           )
         );
     }
@@ -36,7 +38,6 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     const user = new User({
       enrollmentNo,
-      mobileNo,
       password,
       collegeRoom: room._id,
       collegeName,
@@ -79,10 +80,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
 // login user route
 const loginUser = asyncHandler(async (req, res, next) => {
   try {
-    const { mobileNo, password } = req.body;
+    let { userId, password } = req.body;
 
-    // check if user exists
-    let user = await User.findOne({ mobileNo: mobileNo });
+    userId = userId.toLowerCase();
+    // check if user exists with the lowercased username or enrollment number
+    let user = await User.findOne({
+      $or: [{ username: userId }, { enrollmentNo: userId }],
+    });
 
     if (!user) {
       return res
@@ -91,7 +95,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
           new ApiResponse(
             400,
             null,
-            "User does not exist with this mobile number"
+            "User does not exist with this username or enrollment number"
           )
         );
     }
@@ -122,6 +126,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
     user.password = undefined;
     user.refreshToken = undefined;
+    user.isAdmin = undefined;
 
     // get the user profile flaws here
 
@@ -277,7 +282,7 @@ const getUserData = asyncHandler(async (req, res, next) => {
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
     const { fName, lName, avatarUrl } = req.body;
-    const username = fName + " " + lName;
+    const username = fName + lName;
 
     // check if user name already exists
     let presentProfile = await Profile.findOne({ user: req.user._id });
@@ -301,6 +306,10 @@ const createProfile = asyncHandler(async (req, res, next) => {
       username,
       avatar: avatarUrl,
     });
+
+    const user = req.user;
+    user.username = (fName + lName).toLowerCase();
+    await user.save();
 
     return res.status(201).json(
       new ApiResponse(

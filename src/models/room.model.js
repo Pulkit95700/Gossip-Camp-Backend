@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const JoinRoomSchema = new mongoose.Schema(
   {
@@ -48,6 +49,8 @@ const roomSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+roomSchema.plugin(mongooseAggregatePaginate);
 
 export const Room = mongoose.model("Room", roomSchema);
 export const JoinRoom = mongoose.model("JoinRoom", JoinRoomSchema);

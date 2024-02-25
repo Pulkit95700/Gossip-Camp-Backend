@@ -8,12 +8,10 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Profile",
     },
-    mobileNo: {
+    username: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
-      minlength: 10,
     },
     password: {
       type: String,
@@ -63,7 +61,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      mobileNo: this.mobileNo,
+      enrollmentNo: this.enrollmentNo,
       collegeName: this.collegeName,
     },
     process.env.ACCESS_TOKEN_SECRET,

@@ -94,7 +94,7 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
 
     const profile = await Profile.findOne({
       user: user._id,
-    })
+    });
 
     const room = await Room.create({
       roomType: "User",
@@ -254,7 +254,7 @@ const getPublicJoinedRooms = asyncHandler(async (req, res, next) => {
         $project: {
           joinData: 0,
         },
-      }
+      },
     ]);
 
     return res.status(200).json(
@@ -296,6 +296,86 @@ const getPrivateJoinedRoom = asyncHandler(async (req, res, next) => {
       )
     );
   } catch (error) {
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
+  }
+});
+
+const getPublicRooms = asyncHandler(async (req, res, next) => {
+  // need to send room with paginations
+  try {
+    const { page = 1, limit = 10, search = "" } = req.query;
+
+    const options = {
+      page: parseInt(page, 10) || 1,
+      limit: parseInt(limit, 10) || 10,
+    };
+
+    const rooms = await Room.aggregatePaginate(
+      [
+        {
+          $match: {
+            roomType: "User",
+            roomName: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "joinrooms",
+            localField: "_id",
+            foreignField: "room",
+            as: "joinData",
+          },
+        },
+        {
+          $addFields: {
+            totalParticipants: {
+              $size: "$joinData",
+            },
+          },
+        },
+        {
+          $project: {
+            joinData: 0,
+          },
+        },
+        {
+          $lookup: {
+            from: "profiles",
+            localField: "adminProfile",
+            foreignField: "_id",
+            as: "adminProfile",
+          },
+        },
+        {
+          $unwind: "$adminProfile",
+        },
+        {
+          $project: {
+            roomType: 1,
+            roomName: 1,
+            description: 1,
+            roomDP: 1,
+            roomUsername: 1,
+            "adminProfile._id": 1,
+            "adminProfile.fName": 1,
+            "adminProfile.lName": 1,
+            "adminProfile.avatar": 1,
+            "adminProfile.username": 1,
+            totalParticipants: 1,
+          },
+        },
+      ],
+      options
+    );
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, rooms, "Public Rooms Fetched Successfully"));
+  } catch (err) {
+    console.log(err);
     return res.status(501).json(new ApiError(501, "Something went wrong"));
   }
 });
