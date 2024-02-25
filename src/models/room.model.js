@@ -39,9 +39,9 @@ const roomSchema = new mongoose.Schema(
     roomUsername: {
       type: String,
     },
-    admin: {
+    adminProfile: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Profile",
     },
   },
   {
