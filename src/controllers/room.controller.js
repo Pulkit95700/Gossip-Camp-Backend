@@ -1,8 +1,10 @@
 import { JoinRoom, Room } from "../models/room.model.js";
+import { Profile } from "../models/profile.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 // this route is for backend use only.
 const createPrivateRoom = asyncHandler(async (req, res, next) => {
@@ -90,12 +92,16 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
 
     const roomDP = roomDPUploaded.url;
 
+    const profile = await Profile.findOne({
+      user: user._id,
+    })
+
     const room = await Room.create({
       roomType: "User",
       roomName: roomName,
       roomDP: roomDP,
       description: description,
-      admin: user._id,
+      adminProfile: profile._id,
     });
 
     await JoinRoom.create({
@@ -171,76 +177,84 @@ const toggleJoinRoom = asyncHandler(async (req, res, next) => {
 
 const getPublicJoinedRooms = asyncHandler(async (req, res, next) => {
   try {
-    const user = req.user;
-
     // using aggregation pipelines and also count the number of participants in each room
-    const rooms = await JoinRoom.aggregate([
-      {
-        $match: {
-          user: user._id,
-        },
-      },
+    const rooms = await Room.aggregate([
+      // Stage 1: Match rooms where the user participates
       {
         $lookup: {
-          from: "rooms",
-          localField: "room",
-          foreignField: "_id",
-          as: "room",
+          from: "joinrooms", // Join with the 'JoinRoom' collection
+          localField: "_id", // Room's '_id'
+          foreignField: "room", // 'room' field in JoinRoom
+          as: "joinData", // Store result in 'joinData' array
         },
       },
       {
-        $unwind: "$room",
+        $unwind: "$joinData", // Unwind to get individual join info
       },
       {
-        // only show rooms with roomType = User
         $match: {
-          "room.roomType": "User",
+          "joinData.user": req.user._id,
+        },
+      },
+
+      // Stage 2: Project necessary fields (Customize as needed)
+      {
+        $project: {
+          roomType: 1,
+          roomName: 1,
+          description: 1,
+          roomDP: 1,
+          roomUsername: 1,
+          adminProfile: 1, // Include admin since you want to populate
+        },
+      },
+
+      // Stage 3: Populate the 'adminProfile' field
+      {
+        $lookup: {
+          from: "profiles", // Join with 'users' collection
+          localField: "adminProfile", // 'adminProfile' field in Room
+          foreignField: "_id", // '_id' field in profiles
+          as: "adminProfile", // Store result in 'adminProfile' array
         },
       },
       {
-        // add a field in each Room to show the total number of participants
+        $unwind: "$adminProfile", // Unwind to get single admin object
+      },
+      {
+        $project: {
+          roomType: 1,
+          roomName: 1,
+          description: 1,
+          roomDP: 1,
+          roomUsername: 1,
+          "adminProfile._id": 1,
+          "adminProfile.fName": 1,
+          "adminProfile.lName": 1,
+          "adminProfile.avatar": 1,
+          "adminProfile.username": 1,
+        },
+      },
+      {
         $lookup: {
           from: "joinrooms",
-          localField: "room._id",
+          localField: "_id",
           foreignField: "room",
-          as: "totalParticipants",
+          as: "joinData",
         },
       },
       {
         $addFields: {
-          "room.totalParticipants": { $size: "$totalParticipants" },
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "room.admin",
-          foreignField: "_id",
-          as: "admin",
-        },
-      },
-      {
-        $addFields: {
-          "room.admin": { $arrayElemAt: ["$admin", 0] },
+          totalParticipants: {
+            $size: "$joinData",
+          },
         },
       },
       {
         $project: {
-          "room._id": 1,
-          "room.roomName": 1,
-          "room.roomDP": 1,
-          "room.description": 1,
-          "room.roomUsername": 1,
-          "room.admin": 1,
-          "room.totalParticipants": 1,
+          joinData: 0,
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          room: 1,
-        },
-      },
+      }
     ]);
 
     return res.status(200).json(
@@ -253,6 +267,7 @@ const getPublicJoinedRooms = asyncHandler(async (req, res, next) => {
       )
     );
   } catch (error) {
+    console.log(error);
     return res.status(501).json(new ApiError(501, "Something went wrong"));
   }
 });

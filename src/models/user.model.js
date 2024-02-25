@@ -30,7 +30,6 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
     },
-
     collegeName: {
       type: String,
       required: true,
