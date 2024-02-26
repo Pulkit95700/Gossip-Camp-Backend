@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 // routes imports
 import { router as userRouter } from "./routes/user.route.js";
 import { router as roomRouter } from "./routes/room.route.js";
+import { router as profileRouter } from "./routes/profile.route.js";
 
 const allowedOrigins = [process.env.CORS_ORIGIN, "http://localhost:3000"];
 
@@ -30,6 +31,7 @@ app.use(cookieParser());
 // routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/rooms", roomRouter);
+app.use("/api/v1/profiles", profileRouter);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running" });

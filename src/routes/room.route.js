@@ -4,6 +4,7 @@ import {
   createPrivateRoom,
   getPublicJoinedRooms,
   getPrivateJoinedRoom,
+  getPublicRooms,
   toggleJoinRoom,
 } from "../controllers/room.controller.js";
 import auth from "../middlewares/auth.middleware.js";
@@ -24,5 +25,7 @@ router.route("/:roomId/toggle-follow").post(auth, toggleJoinRoom);
 router.route("/public-rooms").get(auth, getPublicJoinedRooms);
 
 router.route("/private-room").get(auth, getPrivateJoinedRoom);
+
+router.route("/all-rooms").get(auth, getPublicRooms);
 
 export { router };

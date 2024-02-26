@@ -311,7 +311,7 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
     };
 
     const rooms = await Room.aggregatePaginate(
-      [
+      Room.aggregate([
         {
           $match: {
             roomType: "User",
@@ -367,7 +367,7 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
             totalParticipants: 1,
           },
         },
-      ],
+      ]),
       options
     );
 
@@ -385,6 +385,7 @@ export {
   createPublicRoom,
   toggleJoinRoom,
   getPublicJoinedRooms,
+  getPublicRooms,
   getPrivateJoinedRoom,
 };
 
