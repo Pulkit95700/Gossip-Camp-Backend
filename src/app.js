@@ -6,11 +6,19 @@ import cookieParser from "cookie-parser";
 import { router as userRouter } from "./routes/user.route.js";
 import { router as roomRouter } from "./routes/room.route.js";
 
+const allowedOrigins = [process.env.CORS_ORIGIN, "http://localhost:3000"];
+
 const app = express();
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
-    // credentials: true,
+    origin: function (origin, callback) {
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        // !origin allows for localhost
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
