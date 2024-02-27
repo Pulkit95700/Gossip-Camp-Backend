@@ -171,22 +171,24 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    console.log(refreshToken);
-    const user = await User.findOne({ refreshToken: refreshToken });
 
-    if (!user) {
-      res.clearCookie("refreshToken");
-      res.clearCookie("accessToken");
-      console.log("refresh token not found")
-      return res
-        .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token is not valid"));
-    }
+    console.log(refreshToken);
 
     const decodedRefreshToken = await jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
+
+    const user = await User.findOne({ refreshToken: refreshToken });
+
+    if (!user) {
+      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken");
+      console.log("refresh token not found");
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Refresh Token is not valid"));
+    }
 
     if (!decodedRefreshToken) {
       res.clearCookie("refreshToken");
@@ -195,7 +197,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       user.refreshToken = undefined;
       await user.save();
 
-      console.log("refresh token expired")
+      console.log("refresh token expired");
       return res
         .status(400)
         .json(new ApiResponse(400, null, "Refresh Token Expired"));
@@ -228,7 +230,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
   } catch (err) {
     res.clearCookie("refreshToken");
     res.clearCookie("accessToken");
-    console.log(err.message)
+    console.log(err.message);
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
 });
@@ -289,7 +291,9 @@ const createProfile = asyncHandler(async (req, res, next) => {
     const username = fName + lName;
 
     // check if user name already exists
-    let presentProfile = await Profile.findOne({ user: req.user._id });
+    let presentProfile = await Profile.findOne({
+      username: username.toLowerCase(),
+    });
 
     if (presentProfile) {
       return res
