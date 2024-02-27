@@ -123,6 +123,64 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
   }
 });
 
+const createAdminPublicRoom = asyncHandler(async (req, res, next) => {
+  const { roomName, description } = req.body;
+
+  try {
+    const user = req.user;
+    // checking if user already has a public room created
+    const roomDPPath = req.file?.path;
+
+    if (!roomDPPath) {
+      return res
+        .status(501)
+        .json(new ApiResponse(501, "The file could not be uploaded on server"));
+    }
+
+    const roomDPUploaded = await uploadOnCloudinary(roomDPPath);
+
+    if (!roomDPUploaded.url) {
+      res
+        .status(501)
+        .json(
+          new ApiResponse(501, "The file could not be uploaded on cloudinary")
+        );
+    }
+
+    const roomDP = roomDPUploaded.url;
+
+    const profile = await Profile.findOne({
+      user: user._id,
+    });
+
+    const room = await Room.create({
+      roomType: "User",
+      roomName: roomName,
+      roomDP: roomDP,
+      description: description,
+      adminProfile: profile._id,
+    });
+
+    await JoinRoom.create({
+      user: user._id,
+      room: room._id,
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          room,
+        },
+        "Room Created Successfully"
+      )
+    );
+  } catch (err) {
+    console.log(err);
+    return res.status(501).json(new ApiError(501, err.message));
+  }
+});
+
 const toggleJoinRoom = asyncHandler(async (req, res, next) => {
   try {
     const user = req.user;
@@ -331,11 +389,24 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
         },
         {
           $addFields: {
+            isCurrentUserFollowing: {
+              $in: [new mongoose.Types.ObjectId(req.user._id), "$joinData.user"],
+            },
+          },
+        },
+        {
+          $match: {
+            isCurrentUserFollowing: false,
+          },
+        },
+        {
+          $addFields: {
             totalParticipants: {
               $size: "$joinData",
             },
           },
         },
+
         {
           $project: {
             joinData: 0,
