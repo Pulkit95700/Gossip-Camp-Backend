@@ -171,6 +171,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
+    console.log(refreshToken);
     const user = await User.findOne({ refreshToken: refreshToken });
 
     if (!user) {
