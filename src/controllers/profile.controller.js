@@ -26,6 +26,7 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
               { lName: { $regex: search, $options: "i" } },
               { username: { $regex: search, $options: "i" } },
             ],
+            user: { $ne: req.user._id },
           },
         },
         {
