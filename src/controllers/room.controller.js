@@ -457,16 +457,17 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
 const getRoomDetails = asyncHandler(async (req, res, next) => {
   try {
     const { roomId } = req.params;
-    const room = await Room.findById(roomId);
+    
+    const room = await Room.findById(roomId).select(
+      "-__v -updatedAt -createdAt -adminProfile"
+    );
 
-    if(!room){
+    if (!room) {
       return res.status(501).json(new ApiError(501, "Room not found"));
     }
-
-    return res.status(200).json(
-      new ApiResponse(200, room, "Room fetched Successfully")
-    )
-
+    return res
+      .status(200)
+      .json(new ApiResponse(200, room, "Room fetched Successfully"));
   } catch (err) {
     console.log(err);
     return res.status(501).json(new ApiError(501, "Something went wrong"));
