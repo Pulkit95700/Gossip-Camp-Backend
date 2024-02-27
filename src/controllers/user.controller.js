@@ -176,6 +176,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     if (!user) {
       res.clearCookie("refreshToken");
       res.clearCookie("accessToken");
+      console.log("refresh token not found")
       return res
         .status(400)
         .json(new ApiResponse(400, null, "Refresh Token is not valid"));
@@ -193,6 +194,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       user.refreshToken = undefined;
       await user.save();
 
+      console.log("refresh token expired")
       return res
         .status(400)
         .json(new ApiResponse(400, null, "Refresh Token Expired"));
@@ -225,6 +227,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
   } catch (err) {
     res.clearCookie("refreshToken");
     res.clearCookie("accessToken");
+    console.log(err.message)
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
 });
