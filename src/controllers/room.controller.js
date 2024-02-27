@@ -390,7 +390,10 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
         {
           $addFields: {
             isCurrentUserFollowing: {
-              $in: [new mongoose.Types.ObjectId(req.user._id), "$joinData.user"],
+              $in: [
+                new mongoose.Types.ObjectId(req.user._id),
+                "$joinData.user",
+              ],
             },
           },
         },
@@ -451,6 +454,25 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getRoomDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const room = await Room.findById(roomId);
+
+    if(!room){
+      return res.status(501).json(new ApiError(501, "Room not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, room, "Room fetched Successfully")
+    )
+
+  } catch (err) {
+    console.log(err);
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
+  }
+});
+
 export {
   createPrivateRoom,
   createPublicRoom,
@@ -458,6 +480,8 @@ export {
   getPublicJoinedRooms,
   getPublicRooms,
   getPrivateJoinedRoom,
+  createAdminPublicRoom,
+  getRoomDetails,
 };
 
 // public jo user rooms
