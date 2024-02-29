@@ -8,16 +8,16 @@ import {
   toggleJoinRoom,
   getRoomDetails,
   createAdminPublicRoom,
+  getAllCollegeRooms,
+  getTrendingRooms,
+  getRecentlyAddedRooms,
 } from "../controllers/room.controller.js";
 import auth from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
-router
-  .route("/create-private-room")
-  .post(upload.single("roomDP"), createPrivateRoom);
-
+// protected routes
 router
   .route("/create-public-room")
   .post(auth, upload.single("roomDP"), createPublicRoom);
@@ -35,4 +35,14 @@ router.route("/private-room").get(auth, getPrivateJoinedRoom);
 router.route("/all-rooms").get(auth, getPublicRooms);
 
 router.route("/room-details/:roomId").get(auth, getRoomDetails);
+
+// unprotected routes
+router.route("/all-college-rooms").get(getAllCollegeRooms);
+router
+  .route("/create-private-room")
+  .post(upload.single("roomDP"), createPrivateRoom);
+
+router.route("/trending-rooms").get(getTrendingRooms);
+router.route("/recent-rooms").get(getRecentlyAddedRooms);
+
 export { router };

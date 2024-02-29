@@ -22,7 +22,7 @@ const roomSchema = new mongoose.Schema(
     roomType: {
       type: String,
       required: true,
-      enum: ["College", "User"],
+      enum: ["College", "User", "Admin"],
     },
     roomName: {
       type: String,
@@ -33,6 +33,11 @@ const roomSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    tags: [
+      {
+        type: String,
+      },
+    ],
     roomDP: {
       type: String,
       default: null,
