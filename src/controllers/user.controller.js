@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { JoinRoom, Room } from "../models/room.model.js";
 import jwt from "jsonwebtoken";
 import { Profile } from "../models/profile.model.js";
+import { v4 } from "uuid";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -39,6 +40,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const user = new User({
       enrollmentNo,
       password,
+      username: v4(),
       collegeRoom: room._id,
       collegeName,
     });

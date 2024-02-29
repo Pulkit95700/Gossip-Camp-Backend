@@ -54,7 +54,7 @@ const createPrivateRoom = asyncHandler(async (req, res, next) => {
 });
 
 const createPublicRoom = asyncHandler(async (req, res, next) => {
-  const { roomName, description } = req.body;
+  const { roomName, description, tags } = req.body;
 
   try {
     const user = req.user;
@@ -100,6 +100,7 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
       roomType: "User",
       roomName: roomName,
       roomDP: roomDP,
+      tags: tags,
       description: description,
       adminProfile: profile._id,
     });
@@ -124,7 +125,7 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
 });
 
 const createAdminPublicRoom = asyncHandler(async (req, res, next) => {
-  const { roomName, description } = req.body;
+  const { roomName, description, roomUsername, tags } = req.body;
 
   try {
     const user = req.user;
@@ -154,9 +155,11 @@ const createAdminPublicRoom = asyncHandler(async (req, res, next) => {
     });
 
     const room = await Room.create({
-      roomType: "User",
+      roomType: "Admin",
       roomName: roomName,
       roomDP: roomDP,
+      tags: tags,
+      roomUsername: roomUsername,
       description: description,
       adminProfile: profile._id,
     });
@@ -335,7 +338,9 @@ const getPrivateJoinedRoom = asyncHandler(async (req, res, next) => {
     const user = req.user;
 
     // get only sinlge private room for the user
-    const room = await Room.findById(user.collegeRoom);
+    const room = await Room.findById(user.collegeRoom).select(
+      "-createdAt -updatedAt -__v"
+    );
 
     const totalParticipants = await JoinRoom.find({
       room: room._id,
@@ -372,7 +377,14 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
       Room.aggregate([
         {
           $match: {
-            roomType: "User",
+            $or: [
+              {
+                roomType: "User",
+              },
+              {
+                roomType: "Admin",
+              },
+            ],
             roomName: {
               $regex: search,
               $options: "i",
@@ -457,7 +469,7 @@ const getPublicRooms = asyncHandler(async (req, res, next) => {
 const getRoomDetails = asyncHandler(async (req, res, next) => {
   try {
     const { roomId } = req.params;
-    
+
     const room = await Room.findById(roomId).select(
       "-__v -updatedAt -createdAt -adminProfile"
     );
@@ -474,14 +486,238 @@ const getRoomDetails = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getAllCollegeRooms = asyncHandler(async (req, res, next) => {
+  const { page = "1", limit = "10", search = "" } = req.query;
+
+  const options = {
+    page: parseInt(page),
+    limit: parseInt(limit),
+  };
+
+  try {
+    const rooms = await Room.aggregatePaginate(
+      Room.aggregate([
+        {
+          $match: {
+            roomType: "College",
+            $or: [
+              {
+                roomName: {
+                  $regex: search,
+                  $options: "i",
+                },
+                roomUsername: {
+                  $regex: search,
+                  $options: "i",
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "joinrooms",
+            localField: "_id",
+            foreignField: "room",
+            as: "joinData",
+          },
+        },
+        {
+          $addFields: {
+            totalParticipants: {
+              $size: "$joinData",
+            },
+          },
+        },
+        {
+          $project: {
+            joinData: 0,
+            createdAt: 0,
+            updatedAt: 0,
+            __v: 0,
+          },
+        },
+      ]),
+      options
+    );
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, rooms, "College Rooms Fetched Successfully"));
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, err));
+  }
+});
+
+const getRecentlyAddedRooms = asyncHandler(async (req, res, next) => {
+  // only send 4 most recently added rooms
+  try {
+    let rooms = await Room.aggregate([
+      {
+        $match: {
+          $or: [{ roomType: "Admin" }, { roomType: "User" }],
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $limit: 4,
+      },
+      {
+        $lookup: {
+          from: "joinrooms",
+          localField: "_id",
+          foreignField: "room",
+          as: "joinData",
+        },
+      },
+      {
+        $addFields: {
+          totalParticipants: {
+            $size: "$joinData",
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "profiles",
+          localField: "adminProfile",
+          foreignField: "_id",
+          as: "adminProfile",
+        },
+      },
+      {
+        $unwind: "$adminProfile",
+      },
+      {
+        $project: {
+          roomType: 1,
+          roomName: 1,
+          description: 1,
+          roomDP: 1,
+          roomUsername: 1,
+          "adminProfile._id": 1,
+          "adminProfile.fName": 1,
+          "adminProfile.lName": 1,
+          "adminProfile.avatar": 1,
+          "adminProfile.username": 1,
+          totalParticipants: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          rooms,
+        },
+        "Recently Added Rooms Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res
+      .status(501)
+      .json(
+        new ApiError(
+          501,
+          "Something went wrong while fetching recently added rooms"
+        )
+      );
+  }
+});
+
+const getTrendingRooms = asyncHandler(async (req, res, next) => {
+  try {
+    // getting recent 4 rooms with maximum participants of User and Admin
+
+    let rooms = await Room.aggregate([
+      {
+        $match: {
+          $or: [{ roomType: "Admin" }, { roomType: "User" }],
+        },
+      },
+      {
+        $lookup: {
+          from: "joinrooms",
+          localField: "_id",
+          foreignField: "room",
+          as: "joinData",
+        },
+      },
+      {
+        $addFields: {
+          totalParticipants: {
+            $size: "$joinData",
+          },
+        },
+      },
+      {
+        $sort: {
+          totalParticipants: -1,
+        },
+      },
+      {
+        $limit: 4,
+      },
+      {
+        $lookup: {
+          from: "profiles",
+          localField: "adminProfile",
+          foreignField: "_id",
+          as: "adminProfile",
+        },
+      },
+      {
+        $unwind: "$adminProfile",
+      },
+      {
+        $project: {
+          roomType: 1,
+          roomName: 1,
+          description: 1,
+          roomDP: 1,
+          roomUsername: 1,
+          "adminProfile._id": 1,
+          "adminProfile.fName": 1,
+          "adminProfile.lName": 1,
+          "adminProfile.avatar": 1,
+          "adminProfile.username": 1,
+          totalParticipants: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          rooms,
+        },
+        "Trending Rooms Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res
+      .status(501)
+      .json(new ApiError(501, "Something went wrong while fetching rooms"));
+  }
+});
+
 export {
   createPrivateRoom,
   createPublicRoom,
   toggleJoinRoom,
   getPublicJoinedRooms,
   getPublicRooms,
+  getAllCollegeRooms,
   getPrivateJoinedRoom,
   createAdminPublicRoom,
+  getRecentlyAddedRooms,
+  getTrendingRooms,
   getRoomDetails,
 };
 
