@@ -51,6 +51,22 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
             as: "following",
           },
         },
+
+        // count followers
+        {
+          $lookup: {
+            from: "follows",
+            localField: "user",
+            foreignField: "following",
+            as: "followers",
+          },
+        },
+        {
+          $addFields: {
+            followers: { $size: "$followers" },
+          },
+        },
+
         {
           $addFields: {
             isFollowing: {
@@ -70,6 +86,7 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
             avatar: 1,
             bio: 1,
             user: 1,
+            followers: 1,
             isFollowing: 1,
           },
         },
