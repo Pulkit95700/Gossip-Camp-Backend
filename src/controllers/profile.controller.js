@@ -2,7 +2,7 @@ import { Profile } from "../models/profile.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Follow } from "../models/Follow.model.js";
+import { Follow } from "../models/follow.model.js";
 
 const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   // get paginated user profiles
