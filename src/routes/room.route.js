@@ -36,7 +36,6 @@ router.route("/all-rooms").get(auth, getPublicRooms);
 
 router.route("/room-details/:roomId").get(auth, getRoomDetails);
 
-// unprotected routes
 router.route("/all-college-rooms").get(auth, getAllCollegeRooms);
 router
   .route("/create-private-room")

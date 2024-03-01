@@ -1,4 +1,5 @@
 import { User } from "../models/user.model.js";
+import { Follow } from "../models/Follow.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { JoinRoom, Room } from "../models/room.model.js";
@@ -340,6 +341,37 @@ const createProfile = asyncHandler(async (req, res, next) => {
   }
 });
 
+const handleToggleFollow = asyncHandler(async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { id } = req.params;
+
+    if (id === user._id) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "You cannot follow yourself"));
+    }
+
+    let follow = await Follow.findOne({ follower: user._id, following: id });
+
+    if (follow) {
+      await follow.remove();
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Unfollowed successfully"));
+    }
+
+    await Follow.create({ follower: user._id, following: id });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "Followed successfully"));
+
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
 export {
   registerUser,
   loginUser,
@@ -348,4 +380,5 @@ export {
   changePassword,
   createProfile,
   getUserData,
+  handleToggleFollow,
 };

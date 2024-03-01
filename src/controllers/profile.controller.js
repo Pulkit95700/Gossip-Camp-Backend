@@ -2,6 +2,7 @@ import { Profile } from "../models/profile.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Follow } from "../models/Follow.model.js";
 
 const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   // get paginated user profiles
@@ -11,6 +12,8 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
 
     page = parseInt(page, 10);
     limit = parseInt(limit, 10);
+
+    const user = req.user;
 
     const options = {
       page,
@@ -30,6 +33,36 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
           },
         },
         {
+          $lookup: {
+            from: "follows",
+            let: { userId: "$user" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$follower", user._id] },
+                      { $eq: ["$following", "$$userId"] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "following",
+          },
+        },
+        {
+          $addFields: {
+            isFollowing: {
+              $cond: {
+                if: { $eq: [{ $size: "$following" }, 0] },
+                then: false,
+                else: true,
+              },
+            },
+          },
+        },
+        {
           $project: {
             fName: 1,
             lName: 1,
@@ -37,6 +70,7 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
             avatar: 1,
             bio: 1,
             user: 1,
+            isFollowing: 1,
           },
         },
       ]),
@@ -52,4 +86,44 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getAllUserProfiles };
+const getProfile = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const profile = await Profile.findOne({ user: id }).select(
+      "-__v -createdAt -updatedAt"
+    );
+
+    if (!profile) {
+      return res.status(404).json(new ApiError(404, "Profile not found"));
+    }
+
+    let follow = await Follow.findOne({
+      follower: req.user._id,
+      following: id,
+    });
+
+    let isFollowing = false;
+    if (follow) {
+      isFollowing = true;
+    }
+
+    let followers = await Follow.find({ following: id }).countDocuments();
+    let following = await Follow.find({ follower: id }).countDocuments();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { ...profile.toObject(), isFollowing, followers, following },
+          "Profile fetched successfully"
+        )
+      );
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Profile cannot be Fetched"));
+  }
+});
+
+export { getAllUserProfiles, getProfile };
