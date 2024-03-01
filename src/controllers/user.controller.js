@@ -355,7 +355,7 @@ const handleToggleFollow = asyncHandler(async (req, res, next) => {
     let follow = await Follow.findOne({ follower: user._id, following: id });
 
     if (follow) {
-      await follow.remove();
+      await Follow.deleteOne({ follower: user._id, following: id });
       return res
         .status(200)
         .json(new ApiResponse(200, null, "Unfollowed successfully"));
