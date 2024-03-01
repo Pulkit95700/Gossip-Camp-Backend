@@ -36,13 +36,12 @@ router.route("/all-rooms").get(auth, getPublicRooms);
 
 router.route("/room-details/:roomId").get(auth, getRoomDetails);
 
-// unprotected routes
-router.route("/all-college-rooms").get(getAllCollegeRooms);
+router.route("/all-college-rooms").get(auth, getAllCollegeRooms);
 router
   .route("/create-private-room")
   .post(upload.single("roomDP"), createPrivateRoom);
 
-router.route("/trending-rooms").get(getTrendingRooms);
-router.route("/recent-rooms").get(getRecentlyAddedRooms);
+router.route("/trending-rooms").get(auth, getTrendingRooms);
+router.route("/recent-rooms").get(auth, getRecentlyAddedRooms);
 
 export { router };
