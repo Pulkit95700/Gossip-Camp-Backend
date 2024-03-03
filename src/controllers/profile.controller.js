@@ -129,23 +129,25 @@ const getProfile = asyncHandler(async (req, res, next) => {
     let followers = await Follow.find({ following: id }).countDocuments();
     let following = await Follow.find({ follower: id }).countDocuments();
 
-    let collegeName = User.find({ _id: profile.user }).select("collegeName");
+    let collegeName = await User.findOne({
+      _id: profile.toObject().user,
+    }).select("collegeName -_id");
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            ...profile.toObject(),
-            isFollowing,
-            followers,
-            following,
-            collegeName,
-          },
-          "Profile fetched successfully"
-        )
-      );
+    collegeName = collegeName.collegeName;
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...profile.toObject(),
+          isFollowing,
+          followers,
+          following,
+          collegeName,
+        },
+        "Profile fetched successfully"
+      )
+    );
   } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiError(500, "Profile cannot be Fetched"));
