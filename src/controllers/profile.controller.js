@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Follow } from "../models/follow.model.js";
+import { User } from "../models/user.model.js";
 
 const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   // get paginated user profiles
@@ -128,12 +129,20 @@ const getProfile = asyncHandler(async (req, res, next) => {
     let followers = await Follow.find({ following: id }).countDocuments();
     let following = await Follow.find({ follower: id }).countDocuments();
 
+    let collegeName = User.find({ _id: profile.user }).select("collegeName");
+
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { ...profile.toObject(), isFollowing, followers, following },
+          {
+            ...profile.toObject(),
+            isFollowing,
+            followers,
+            following,
+            collegeName,
+          },
           "Profile fetched successfully"
         )
       );
