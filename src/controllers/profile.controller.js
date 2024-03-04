@@ -106,9 +106,9 @@ const getAllUserProfiles = asyncHandler(async (req, res, next) => {
 
 const getProfile = asyncHandler(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { username } = req.params;
 
-    const profile = await Profile.findOne({ user: id }).select(
+    let profile = await Profile.findOne({ username: username }).select(
       "-__v -createdAt -updatedAt"
     );
 
@@ -116,9 +116,11 @@ const getProfile = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiError(404, "Profile not found"));
     }
 
+    profile = profile.toObject();
+
     let follow = await Follow.findOne({
       follower: req.user._id,
-      following: id,
+      following: profile.user,
     });
 
     let isFollowing = false;
@@ -126,11 +128,11 @@ const getProfile = asyncHandler(async (req, res, next) => {
       isFollowing = true;
     }
 
-    let followers = await Follow.find({ following: id }).countDocuments();
-    let following = await Follow.find({ follower: id }).countDocuments();
+    let followers = await Follow.find({ following: profile.user }).countDocuments();
+    let following = await Follow.find({ follower: profile.user }).countDocuments();
 
     let collegeName = await User.findOne({
-      _id: profile.toObject().user,
+      _id: profile.user,
     }).select("collegeName -_id");
 
     collegeName = collegeName.collegeName;
@@ -139,7 +141,7 @@ const getProfile = asyncHandler(async (req, res, next) => {
       new ApiResponse(
         200,
         {
-          ...profile.toObject(),
+          ...profile,
           isFollowing,
           followers,
           following,
