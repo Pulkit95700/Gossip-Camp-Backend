@@ -10,6 +10,6 @@ const router = Router();
 router.use(auth);
 
 router.route("/all-users").get(getAllUserProfiles);
-router.route("/user-profile/:id").get(getProfile);
+router.route("/user-profile/:username").get(getProfile);
 
 export { router };
