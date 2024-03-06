@@ -182,12 +182,12 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    const user = await User.findOne({ refreshToken: refreshToken });
+    const user = await User.findById({ _id: decodedRefreshToken._id });
 
     if (!user) {
       res.clearCookie("refreshToken");
       res.clearCookie("accessToken");
-      console.log("refresh token not found");
+      console.log("refresh token is not valid");
       return res
         .status(400)
         .json(new ApiResponse(400, null, "Refresh Token is not valid"));
