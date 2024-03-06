@@ -22,6 +22,7 @@ const roomSchema = new mongoose.Schema(
     roomType: {
       type: String,
       required: true,
+      unique: true,
       enum: ["College", "User", "Admin"],
     },
     roomName: {
