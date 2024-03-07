@@ -182,7 +182,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    const user = await User.findById({ _id: decodedRefreshToken._id });
+    const user = await User.findById(decodedRefreshToken._id);
 
     if (!user) {
       res.clearCookie("refreshToken");
