@@ -1,20 +1,20 @@
 import mongoose from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-const postSchema = new mongoose.Schema(
+const messageSchema = new mongoose.Schema(
   {
-    user: {
+    profile: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Profile",
     },
     room: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
     },
-    postType: {
+    messageType: {
       type: String,
       required: true,
-      enum: ["Text", "Image", "Video"],
+      enum: ["Text", "Image", "Video", "Join Room", "Leave Room"],
     },
     text: {
       type: String,
@@ -34,8 +34,7 @@ const postSchema = new mongoose.Schema(
   }
 );
 
-postSchema.plugin(mongooseAggregatePaginate);
+messageSchema.plugin(mongooseAggregatePaginate);
 
 // calculate likes and comments from their respective models
-
-export const Post = mongoose.model("Post", postSchema);
+export const Message = mongoose.model("Message", messageSchema);
