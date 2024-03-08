@@ -175,8 +175,6 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
-    console.log(refreshToken);
-
     const decodedRefreshToken = await jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET
