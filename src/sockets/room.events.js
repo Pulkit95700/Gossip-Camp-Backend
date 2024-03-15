@@ -1,4 +1,5 @@
 import { Message } from "../models/message.model.js";
+import { MESSAGE } from "./events.js";
 
 const openRoom = (io, socket, data) => {
   const roomId = data.roomId;
@@ -20,7 +21,7 @@ const joinRoom = async (io, socket, data) => {
     await message.save();
     await message.populate("profile", "username avatar");
 
-    io.to(roomId).emit("message", message);
+    io.to(roomId).emit(MESSAGE, message);
   } catch (err) {
     console.log(err);
   }
@@ -41,12 +42,11 @@ const leaveRoom = async (io, socket, data) => {
     await message.save();
     console.log(message);
     socket.leave(roomId);
-    io.to(roomId).emit("message", {
+    io.to(roomId).emit(MESSAGE, {
       messageType: "Leave Room",
       text: data.username + " has left the room",
       createdAt: message.createdAt,
     });
-
   } catch (err) {
     console.log(err);
   }
