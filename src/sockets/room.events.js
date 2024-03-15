@@ -2,6 +2,7 @@ import { Message } from "../models/message.model.js";
 
 const openRoom = (io, socket, data) => {
   const roomId = data.roomId;
+  console.log("open room", roomId);
   socket.join(roomId);
 };
 
@@ -28,21 +29,33 @@ const joinRoom = async (io, socket, data) => {
 const leaveRoom = async (io, socket, data) => {
   const roomId = data.roomId;
   socket.leave(roomId);
+  console.log("leave room", roomId, data.userId, data.username);
   try {
     const message = new Message({
-      user: data.userId,
+      profile: data.profileId,
       room: roomId,
-      postType: "Leave Room",
+      messageType: "Leave Room",
       text: data.username + " has left the room",
     });
 
     await message.save();
-    io.to(roomId).emit("message", message);
-
+    console.log(message);
     socket.leave(roomId);
+    io.to(roomId).emit("message", {
+      messageType: "Leave Room",
+      text: data.username + " has left the room",
+      createdAt: message.createdAt,
+    });
+
   } catch (err) {
     console.log(err);
   }
 };
 
-export { openRoom, joinRoom, leaveRoom };
+const closeRoom = async (io, socket, data) => {
+  const roomId = data.roomId;
+  console.log("close room", roomId);
+  socket.leave(roomId);
+};
+
+export { openRoom, joinRoom, leaveRoom, closeRoom };

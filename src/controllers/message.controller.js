@@ -65,4 +65,35 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getRoomMessages };
+const sendMessage = asyncHandler(async (req, res, next) => {
+  const { roomId } = req.params;
+  const { text, messageType, profileId } = req.body;
+
+  if (!text || !messageType || !profileId) {
+    return res.status(400).json(new ApiResponse(400, "Invalid request"));
+  }
+
+  try {
+    let room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json(new ApiResponse(404, "Room not found"));
+    }
+
+    let message = new Message({
+      profile: profileId,
+      room: roomId,
+      text,
+      messageType,
+    });
+
+    await message.save();
+    await message.populate("profile", "username avatar");
+
+    res.status(201).json(new ApiResponse(201, message, "Message sent"));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiResponse(500, "Server Error"));
+  }
+});
+
+export { getRoomMessages, sendMessage };

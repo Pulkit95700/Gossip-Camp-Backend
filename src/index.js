@@ -3,8 +3,19 @@ import { connectDB } from "./db/index.js";
 import { app } from "./app.js";
 import { Server } from "socket.io";
 import http from "http";
-import { openRoom, joinRoom, leaveRoom } from "./sockets/room.events.js";
+import {
+  openRoom,
+  joinRoom,
+  leaveRoom,
+  closeRoom,
+} from "./sockets/room.events.js";
 import jwt from "jsonwebtoken";
+import {
+  CLOSE_ROOM,
+  JOIN_ROOM,
+  LEAVE_ROOM,
+  OPEN_ROOM,
+} from "./sockets/events.js";
 
 dotenv.config({
   path: "./.env",
@@ -39,10 +50,12 @@ connectDB()
     io.on("connection", (socket) => {
       console.log("a user connected", socket.id);
 
-      socket.on("open-room", (data) => openRoom(io, socket, data));
-      socket.on("join-room", (data) => joinRoom(io, socket, data));
-      socket.on("leave-room", (data) => leaveRoom(io, socket, data));
-      
+      // room events
+      socket.on(OPEN_ROOM, (data) => openRoom(io, socket, data));
+      socket.on(CLOSE_ROOM, (data) => closeRoom(io, socket, data));
+      socket.on(JOIN_ROOM, (data) => joinRoom(io, socket, data));
+      socket.on(LEAVE_ROOM, (data) => leaveRoom(io, socket, data));
+
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
       });
