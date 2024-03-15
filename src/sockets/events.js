@@ -4,3 +4,4 @@ export const LEAVE_ROOM = "leave-room";
 export const CLOSE_ROOM = "close-room";
 export const CREATE_MESSAGE = "create-message";
 export const SEND_MESSAGE = "send-message";
+export const MESSAGE = "message";
