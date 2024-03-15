@@ -564,15 +564,28 @@ const getRecentlyAddedRooms = asyncHandler(async (req, res, next) => {
         },
       },
       {
-        $limit: 4,
-      },
-      {
         $lookup: {
           from: "joinrooms",
           localField: "_id",
           foreignField: "room",
           as: "joinData",
         },
+      },
+      {
+        // filter only those rooms whose user is not participant
+        $addFields: {
+          isCurrentUserFollowing: {
+            $in: [new mongoose.Types.ObjectId(req.user._id), "$joinData.user"],
+          },
+        },
+      },
+      {
+        $match: {
+          isCurrentUserFollowing: false,
+        },
+      },
+      {
+        $limit: 4,
       },
       {
         $addFields: {
@@ -646,6 +659,19 @@ const getTrendingRooms = asyncHandler(async (req, res, next) => {
           localField: "_id",
           foreignField: "room",
           as: "joinData",
+        },
+      },
+      {
+        // filter only those rooms whose user is not participant
+        $addFields: {
+          isCurrentUserFollowing: {
+            $in: [new mongoose.Types.ObjectId(req.user._id), "$joinData.user"],
+          },
+        },
+      },
+      {
+        $match: {
+          isCurrentUserFollowing: false,
         },
       },
       {
