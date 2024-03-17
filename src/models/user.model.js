@@ -18,9 +18,9 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       trim: true,
     },
-    enrollmentNo: {
+    email: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
       unique: true,
     },
@@ -61,7 +61,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      enrollmentNo: this.enrollmentNo,
+      email: this.email,
       collegeName: this.collegeName,
     },
     process.env.ACCESS_TOKEN_SECRET,

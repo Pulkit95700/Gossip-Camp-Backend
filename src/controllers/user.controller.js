@@ -9,24 +9,20 @@ import { v4 } from "uuid";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
-    let { enrollmentNo, password, collegeName } = req.body;
+    let { email, password, collegeName } = req.body;
     // if user already exists then throw error (check with enrollmentNo and username)
 
-    enrollmentNo = enrollmentNo.toLowerCase();
+    email = email.toLowerCase();
 
     let presentUser = await User.findOne({
-      enrollmentNo: enrollmentNo,
+      email: email,
     });
 
     if (presentUser) {
       return res
         .status(400)
         .json(
-          new ApiResponse(
-            400,
-            null,
-            "User already exists with this enrollment number"
-          )
+          new ApiResponse(400, null, "User already exists with this Email")
         );
     }
 
@@ -39,7 +35,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     const user = new User({
-      enrollmentNo,
+      email,
       password,
       username: v4(),
       collegeRoom: room._id,
@@ -88,7 +84,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
     userId = userId.toLowerCase();
     // check if user exists with the lowercased username or enrollment number
     let user = await User.findOne({
-      $or: [{ username: userId }, { enrollmentNo: userId }],
+      $or: [{ username: userId }, { email: userId }],
     });
 
     if (!user) {
@@ -98,7 +94,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
           new ApiResponse(
             400,
             null,
-            "User does not exist with this username or enrollment number"
+            "User does not exist with this username or Email Id"
           )
         );
     }
@@ -147,6 +143,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
         )
       );
   } catch (err) {
+    console.log(err);
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
 });
