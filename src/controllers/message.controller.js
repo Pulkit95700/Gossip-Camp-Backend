@@ -17,16 +17,13 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
   const { page = 1, limit = 30 } = req.query;
 
   try {
-    const options = {
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      sort: { createdAt: -1 },
-    };
-
     const messages = await Message.aggregatePaginate(
       Message.aggregate([
         {
           $match: { room: room._id },
+        },
+        {
+          $sort: { createdAt: -1 },
         },
         {
           $lookup: {
@@ -53,9 +50,13 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
           },
         },
       ]),
-      options
+      {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+      }
     );
-
+    
+    messages.docs = messages.docs.reverse();
     
     return res
       .status(200)
