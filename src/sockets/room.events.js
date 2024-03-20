@@ -29,7 +29,6 @@ const joinRoom = async (io, socket, data) => {
 
 const leaveRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  socket.leave(roomId);
   console.log("leave room", roomId, data.userId, data.username);
   try {
     const message = new Message({
@@ -41,12 +40,12 @@ const leaveRoom = async (io, socket, data) => {
 
     await message.save();
     console.log(message);
-    socket.leave(roomId);
-    io.to(roomId).emit(MESSAGE, {
+    socket.to(roomId).emit(MESSAGE, {
       messageType: "Leave Room",
       text: data.username + " has left the room",
       createdAt: message.createdAt,
     });
+    socket.leave(roomId);
   } catch (err) {
     console.log(err);
   }
