@@ -9,7 +9,7 @@ const openRoom = (io, socket, data) => {
 
 const joinRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  console.log("join room", roomId, data.userId, data.username);
+  console.log("join room", roomId, data.username);
   try {
     const message = new Message({
       profile: data.profileId,
@@ -41,6 +41,7 @@ const leaveRoom = async (io, socket, data) => {
     await message.save();
     console.log(message);
     socket.to(roomId).emit(MESSAGE, {
+      _id: message._id,
       messageType: "Leave Room",
       text: data.username + " has left the room",
       createdAt: message.createdAt,
