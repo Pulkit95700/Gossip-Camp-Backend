@@ -10,6 +10,7 @@ const openRoom = (io, socket, data) => {
 const joinRoom = async (io, socket, data) => {
   const roomId = data.roomId;
   socket.join(roomId);
+  console.log("join room", roomId, data.userId, data.username);
   try {
     const message = new Message({
       profile: data.profileId,
@@ -19,9 +20,9 @@ const joinRoom = async (io, socket, data) => {
     });
 
     await message.save();
-    await message.populate("profile", "username avatar");
+    console.log(message);
 
-    io.to(roomId).emit(MESSAGE, message);
+    await socket.to(roomId).emit(MESSAGE, message);
   } catch (err) {
     console.log(err);
   }

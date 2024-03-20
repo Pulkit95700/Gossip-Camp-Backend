@@ -305,7 +305,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
         );
     }
 
-    await Profile.create({
+    let profile = await Profile.create({
       user: req.user._id,
       fName,
       lName,
@@ -321,6 +321,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
       new ApiResponse(
         201,
         {
+          _id: profile._id, 
           fName,
           lName,
           username,
