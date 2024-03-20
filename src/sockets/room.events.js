@@ -9,7 +9,6 @@ const openRoom = (io, socket, data) => {
 
 const joinRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  socket.join(roomId);
   console.log("join room", roomId, data.userId, data.username);
   try {
     const message = new Message({
