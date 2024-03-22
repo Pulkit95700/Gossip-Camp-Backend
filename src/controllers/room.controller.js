@@ -68,8 +68,19 @@ const createPublicRoom = asyncHandler(async (req, res, next) => {
 
     if (presentRoom) {
       return res
-        .status(501)
-        .json(new ApiResponse(501, "You already have a public room created"));
+        .status(400)
+        .json(new ApiResponse(400, "You already have a public room created"));
+    }
+
+    // check if there is another room from same name
+    const presentRoomName = await Room.findOne({
+      roomName: roomName,
+    });
+
+    if (presentRoomName) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, "Room with same name already exists"));
     }
 
     const roomDPPath = req.file?.path;
@@ -470,7 +481,11 @@ const getRoomDetails = asyncHandler(async (req, res, next) => {
   try {
     const { roomId } = req.params;
 
-    const room = await Room.findById(roomId).select(
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const room = await Room.find({ roomId }).select(
       "-__v -updatedAt -createdAt -adminProfile"
     );
 

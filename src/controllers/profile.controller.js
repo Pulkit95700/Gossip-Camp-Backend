@@ -4,6 +4,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Follow } from "../models/follow.model.js";
 import { User } from "../models/user.model.js";
+import { Message } from "../models/message.model.js";
+import { generateStats } from "../utils/Profile.utils.js";
 
 const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   // get paginated user profiles
@@ -128,9 +130,23 @@ const getProfile = asyncHandler(async (req, res, next) => {
       isFollowing = true;
     }
 
-    let followers = await Follow.find({ following: profile.user }).countDocuments();
-    let following = await Follow.find({ follower: profile.user }).countDocuments();
+    let followers = await Follow.find({
+      following: profile.user,
+    }).countDocuments();
 
+    let following = await Follow.find({
+      follower: profile.user,
+    }).countDocuments();
+
+    let messages = await Message.find({
+      profile: profile._id,
+    }).countDocuments();
+
+    const { seekerScore, interactiveScore, position } = generateStats(
+      followers,
+      messages,
+      messages
+    );
     let collegeName = await User.findOne({
       _id: profile.user,
     }).select("collegeName -_id");
@@ -145,6 +161,9 @@ const getProfile = asyncHandler(async (req, res, next) => {
           isFollowing,
           followers,
           following,
+          seekerScore,
+          interactiveScore,
+          position,
           collegeName,
         },
         "Profile fetched successfully"
