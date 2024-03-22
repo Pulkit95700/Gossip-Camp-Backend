@@ -285,12 +285,15 @@ const getUserData = asyncHandler(async (req, res, next) => {
 
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
-    const { fName, lName, avatarUrl } = req.body;
-    const username = fName + lName;
+    let { fName, lName, avatarUrl } = req.body;
+    let username = fName + lName;
 
+    fName = fName.trim().toLowerCase();
+    lName = lName.trim().toLowerCase();
+    username = username.trim().toLowerCase();
     // check if user name already exists
     let presentProfile = await Profile.findOne({
-      username: username.toLowerCase(),
+      username: username,
     });
 
     if (presentProfile) {
@@ -321,7 +324,7 @@ const createProfile = asyncHandler(async (req, res, next) => {
       new ApiResponse(
         201,
         {
-          _id: profile._id, 
+          _id: profile._id,
           fName,
           lName,
           username,
