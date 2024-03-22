@@ -485,7 +485,7 @@ const getRoomDetails = asyncHandler(async (req, res, next) => {
       return res.status(501).json(new ApiError(501, "Room Id is required"));
     }
 
-    const room = await Room.find({ roomId }).select(
+    const room = await Room.findById(roomId).select(
       "-__v -updatedAt -createdAt -adminProfile"
     );
 
