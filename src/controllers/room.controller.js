@@ -777,11 +777,11 @@ const getRoomProfileDetails = asyncHandler(async (req, res, next) => {
       new ApiResponse(
         200,
         {
-          room: {
-            ...room._doc,
-            totalParticipants: totalParticipants,
-            totalMessages: totalMessages,
-          },
+          ...room._doc,
+          totalParticipants: totalParticipants,
+          totalMessages: totalMessages,
+          activityScore:
+            totalMessages / (totalParticipants === 0 ? 1 : totalParticipants),
         },
         "Room Profile Fetched Successfully"
       )
