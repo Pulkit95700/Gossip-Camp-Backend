@@ -1,5 +1,6 @@
 import { JoinRoom, Room } from "../models/room.model.js";
 import { Profile } from "../models/profile.model.js";
+import { Message } from "../models/message.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -748,6 +749,48 @@ const getTrendingRooms = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getRoomProfileDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const room = await Room.findById(roomId).select(
+      "-__v -updatedAt -createdAt"
+    );
+
+    if (!room) {
+      return res.status(501).json(new ApiError(501, "Room not found"));
+    }
+
+    const totalParticipants = await JoinRoom.find({
+      room: room._id,
+    }).countDocuments();
+
+    const totalMessages = await Message.find({
+      room: room._id,
+    }).countDocuments();
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          room: {
+            ...room._doc,
+            totalParticipants: totalParticipants,
+            totalMessages: totalMessages,
+          },
+        },
+        "Room Profile Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
+  }
+});
+
 export {
   createPrivateRoom,
   createPublicRoom,
@@ -760,6 +803,7 @@ export {
   getRecentlyAddedRooms,
   getTrendingRooms,
   getRoomDetails,
+  getRoomProfileDetails,
 };
 
 // public jo user rooms
