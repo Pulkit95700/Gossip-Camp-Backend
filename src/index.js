@@ -9,12 +9,13 @@ import {
   leaveRoom,
   closeRoom,
 } from "./sockets/room.events.js";
-import { sendMessage } from "./sockets/message.events.js";
+import { sendMessage, likeMessage } from "./sockets/message.events.js";
 import jwt from "jsonwebtoken";
 import {
   CLOSE_ROOM,
   JOIN_ROOM,
   LEAVE_ROOM,
+  LIKE_MESSAGE,
   OPEN_ROOM,
   SEND_MESSAGE,
 } from "./sockets/events.js";
@@ -58,6 +59,7 @@ connectDB()
       socket.on(JOIN_ROOM, (data) => joinRoom(io, socket, data));
       socket.on(LEAVE_ROOM, (data) => leaveRoom(io, socket, data));
       socket.on(SEND_MESSAGE, (data) => sendMessage(io, socket, data));
+      socket.on(LIKE_MESSAGE, (data) => likeMessage(io, socket, data));
 
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
