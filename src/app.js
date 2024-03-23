@@ -21,14 +21,31 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Access-Control-Allow-Origin",
+      "Access-Control-Allow-Credentials",
+      "Access-Control-Allow-Methods",
+      "Access-Control-Allow-Headers",
+      "Origin",
+      "X-Requested-With",
+      "Accept",
+    ],
   })
 );
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
-app.use(cookieParser());
+app.use(
+  cookieParser({
+    secure: true,
+    sameSite: "none",
+    httpOnly: true,
+  })
+);
 
 // routes declaration
 app.use("/api/v1/users", userRouter);

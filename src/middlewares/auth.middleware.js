@@ -12,7 +12,6 @@ const auth = async (req, res, next) => {
     }
 
     const accessToken = authHeader.split(" ")[1];
-
     // const refreshToken = req.cookies.refreshToken
     //   ? req.cookies.refreshToken
     //   : null;

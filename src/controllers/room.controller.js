@@ -54,6 +54,7 @@ const createPrivateRoom = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @POST /api/v1/rooms/create-public-room
 const createPublicRoom = asyncHandler(async (req, res, next) => {
   const { roomName, description, tags } = req.body;
 
@@ -808,4 +809,3 @@ export {
 
 // public jo user rooms
 // private jo college rooms
-// temp comment

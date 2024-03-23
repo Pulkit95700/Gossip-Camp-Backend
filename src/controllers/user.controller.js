@@ -51,13 +51,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
     await JoinRoom.create({ user: user, room: room });
 
     // setting the refresh and accesstoken in cookies
-    // const options = {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production" ? true : false,
-    // };
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+    };
 
-    // res.cookie("refreshToken", refreshToken, options);
-    // res.cookie("accessToken", accessToken, options);
+    res.cookie("refreshToken", refreshToken, options);
+    res.cookie("accessToken", accessToken, options);
 
     user.password = undefined;
     user.refreshToken = undefined;
