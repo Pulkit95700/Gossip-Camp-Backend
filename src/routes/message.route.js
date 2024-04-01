@@ -5,13 +5,15 @@ import {
   toggleLikeMessage,
   sendMessage,
 } from "../controllers/message.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router.use(auth);
 
 router.route("/:roomId/all").get(getRoomMessages);
-router.route("/send-message/:roomId").post(sendMessage);
+// adding multer middleware to handle file uploads
+router.route("/send-message/:roomId").post(upload.single("image"), sendMessage);
 router.route("/toggle-like-message/:messageId").post(toggleLikeMessage);
 
 export { router };

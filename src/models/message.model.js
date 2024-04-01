@@ -21,7 +21,7 @@ const messageSchema = new mongoose.Schema(
       default: "",
     },
     image: {
-      type: String,
+      type: Object,
       default: null,
     },
     video: {

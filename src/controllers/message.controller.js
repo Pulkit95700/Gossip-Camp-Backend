@@ -5,6 +5,7 @@ import { Room } from "../models/room.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getRoomMessages = asyncHandler(async (req, res, next) => {
   // write with MongoDB pipelines
@@ -44,7 +45,7 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
         {
           $lookup: {
             from: "likes",
-            let: { messageId: "$_id", profileId: profile._id},
+            let: { messageId: "$_id", profileId: profile._id },
             pipeline: [
               {
                 $match: {
@@ -112,29 +113,81 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     return res.status(400).json(new ApiResponse(400, "Invalid request"));
   }
 
-  try {
-    let room = await Room.findById(roomId);
-    if (!room) {
-      return res.status(404).json(new ApiResponse(404, "Room not found"));
+  // checking if message type is image
+  if (messageType === "Image" && !req.file) {
+    return res.status(400).json(new ApiResponse(400, "Invalid request"));
+  }
+  if (messageType === "Text") {
+    try {
+      let room = await Room.findById(roomId);
+      if (!room) {
+        return res.status(404).json(new ApiResponse(404, "Room not found"));
+      }
+
+      let message = new Message({
+        profile: profileId,
+        room: roomId,
+        text,
+        likesCount: 0,
+        messageType,
+      });
+
+      await message.save();
+      await message.populate("profile", "fName lName avatar");
+
+      message.isLiked = false;
+
+      res.status(201).json(new ApiResponse(201, message, "Message sent"));
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json(new ApiResponse(500, "Server Error"));
     }
+  } else if (messageType === "Image") {
+    try {
+      let room = await Room.findById(roomId);
 
-    let message = new Message({
-      profile: profileId,
-      room: roomId,
-      text,
-      likesCount: 0,
-      messageType,
-    });
+      if (!room) {
+        return res.status(404).json(new ApiError(404, "Room not found"));
+      }
 
-    await message.save();
-    await message.populate("profile", "fName lName avatar");
+      let imagePath = req.file?.path;
+      if (!imagePath) {
+        return res
+          .status(400)
+          .json(
+            new ApiError(
+              400,
+              "Request musch have an image if message type is image"
+            )
+          );
+      }
 
-    message.isLiked = false;
+      let image = await uploadOnCloudinary(imagePath, "messages");
+      console.log(image);
 
-    res.status(201).json(new ApiResponse(201, message, "Message sent"));
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json(new ApiResponse(500, "Server Error"));
+      let message = new Message({
+        profile: profileId,
+        room: roomId,
+        image: {
+          url: image.secure_url,
+          publicId: image.public_id,
+        },
+        text,
+        likesCount: 0,
+        messageType,
+      });
+
+      await message.save();
+
+      await message.populate("profile", "fName lName avatar");
+      message.isLiked = false;
+
+      res.status(201).json(new ApiResponse(201, message, "Message sent"));
+    } catch (err) {
+      res.status(500).json(new ApiError(500, "Server Error"));
+    }
+  } else {
+    res.status(400).json(new ApiError(400, "Invalid request"));
   }
 });
 
