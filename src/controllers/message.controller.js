@@ -4,8 +4,12 @@ import { Profile } from "../models/profile.model.js";
 import { Room } from "../models/room.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { getSafeScoreOfImage } from "../utils/Message.utils.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const getRoomMessages = asyncHandler(async (req, res, next) => {
   // write with MongoDB pipelines
@@ -140,7 +144,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
       console.log(err);
-      return res.status(500).json(new ApiResponse(500, "Server Error"));
+      return res.status(500).json(new ApiError(500, "Server Error"));
     }
   } else if (messageType === "Image") {
     try {
@@ -157,13 +161,26 @@ const sendMessage = asyncHandler(async (req, res, next) => {
           .json(
             new ApiError(
               400,
-              "Request musch have an image if message type is image"
+              "Request must have an image if message type is image"
             )
           );
       }
 
       let image = await uploadOnCloudinary(imagePath, "messages");
       console.log(image);
+
+      // checking if image is safe or not
+      const safeScore = await getSafeScoreOfImage(image.secure_url);
+
+      console.log(safeScore);
+      if (safeScore < 0.6) {
+        // delete image from cloudinary
+        await deleteFromCloudinary(image.public_id);
+
+        return res
+          .status(409)
+          .json(new ApiError(409, "Image is not safe to send", []));
+      }
 
       let message = new Message({
         profile: profileId,
@@ -182,7 +199,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.populate("profile", "fName lName avatar");
       message.isLiked = false;
 
-      res.status(201).json(new ApiResponse(201, message, "Message sent"));
+      res.status(201).json(new A(201, message, "Message sent"));
     } catch (err) {
       res.status(500).json(new ApiError(500, "Server Error"));
     }
