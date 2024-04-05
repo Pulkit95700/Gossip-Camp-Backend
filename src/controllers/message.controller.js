@@ -167,12 +167,10 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       }
 
       let image = await uploadOnCloudinary(imagePath, "messages");
-      console.log(image);
 
       // checking if image is safe or not
       const safeScore = await getSafeScoreOfImage(image.secure_url);
 
-      console.log(safeScore);
       if (safeScore < 0.6) {
         // delete image from cloudinary
         await deleteFromCloudinary(image.public_id);
@@ -199,7 +197,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.populate("profile", "fName lName avatar");
       message.isLiked = false;
 
-      res.status(201).json(new A(201, message, "Message sent"));
+      res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
       res.status(500).json(new ApiError(500, "Server Error"));
     }
