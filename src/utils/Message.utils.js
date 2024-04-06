@@ -51,7 +51,7 @@ const getSafeScoreOfImage = async (IMAGE_URL) => {
 
         const safeScore = output.data.concepts.find(
           (concept) => concept.name === "sfw"
-        ).value;
+        )?.value || output.data.concepts[0].value || 0;
 
         resolve(safeScore);
       }
