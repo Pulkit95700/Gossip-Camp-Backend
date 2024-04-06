@@ -170,7 +170,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       let image = await uploadOnCloudinary(imagePath, "messages");
 
       // checking if image is safe or not
-      const safeScore = await getSafeScoreOfImage(image.secure_url);
+      const safeScore = await getSafeScoreOfImage(image.secure_url.replace(/\\/g, '/'));
 
       if (safeScore < 0.6) {
         // delete image from cloudinary
