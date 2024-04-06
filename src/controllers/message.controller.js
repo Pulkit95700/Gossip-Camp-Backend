@@ -113,7 +113,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   const { roomId } = req.params;
   const { text, messageType, profileId } = req.body;
 
-  if (!text || !messageType || !profileId) {
+  if (!messageType || !profileId) {
     return res.status(400).json(new ApiResponse(400, "Invalid request"));
   }
 
@@ -155,6 +155,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       }
 
       let imagePath = req.file?.path;
+      console.log(imagePath);
       if (!imagePath) {
         return res
           .status(400)
@@ -175,6 +176,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         // delete image from cloudinary
         await deleteFromCloudinary(image.public_id);
 
+        console.log("deleted");
         return res
           .status(409)
           .json(new ApiError(409, "Image is not safe to send", []));
