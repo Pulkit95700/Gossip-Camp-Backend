@@ -170,7 +170,9 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       let image = await uploadOnCloudinary(imagePath, "messages");
 
       // checking if image is safe or not
-      const safeScore = await getSafeScoreOfImage(image.secure_url.replace(/\\/g, '/'));
+      const safeScore = await getSafeScoreOfImage(
+        image.secure_url.replace(/\\/g, "/")
+      );
 
       if (safeScore < 0.6) {
         // delete image from cloudinary
@@ -205,6 +207,31 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     }
   } else {
     res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+});
+
+const deleteMessage = asyncHandler(async (req, res, next) => {
+  const { messageId } = req.params;
+
+  if (!messageId) {
+    return res.status(400).json(new ApiError(400, "Id is required"));
+  }
+
+  try {
+    let message = await Message.findByIdAndDelete(messageId);
+
+    if (!message) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Message not found to delete"));
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, message, "Message deleted successfully"));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error"));
   }
 });
 
@@ -260,4 +287,4 @@ const toggleLikeMessage = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getRoomMessages, sendMessage, toggleLikeMessage };
+export { getRoomMessages, sendMessage, toggleLikeMessage, deleteMessage };
