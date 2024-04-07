@@ -226,13 +226,29 @@ const deleteMessage = asyncHandler(async (req, res, next) => {
         .json(new ApiError(404, "Message not found to delete"));
     }
 
+    // check if message is uploaded by the user
+
+    let profile = await Profile.findOne({ user: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json(new ApiError(404, "Profile not found"));
+    }
+
+    if (message.profile.toString() !== profile._id.toString()) {
+      return res
+        .status(403)
+        .json(
+          new ApiError(403, "You are not authorized to delete this message")
+        );
+    }
+
     if (message.messageType === "Image") {
       await deleteFromCloudinary(message.image.publicId);
     }
 
     res
       .status(200)
-      .json(new ApiResponse(200, message, "Message deleted successfully"));
+      .json(new ApiResponse(200, {}, "Message deleted successfully"));
   } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiError(500, "Server Error"));
