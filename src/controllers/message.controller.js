@@ -226,6 +226,10 @@ const deleteMessage = asyncHandler(async (req, res, next) => {
         .json(new ApiError(404, "Message not found to delete"));
     }
 
+    if (message.messageType === "Image") {
+      await deleteFromCloudinary(message.image.publicId);
+    }
+
     res
       .status(200)
       .json(new ApiResponse(200, message, "Message deleted successfully"));
