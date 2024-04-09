@@ -14,7 +14,15 @@ const messageSchema = new mongoose.Schema(
     messageType: {
       type: String,
       required: true,
-      enum: ["Text", "Image", "Video", "Join Room", "Leave Room"],
+      enum: [
+        "Text",
+        "Image",
+        "Video",
+        "Join Room",
+        "Leave Room",
+        "Poll",
+        "ImagePoll",
+      ],
     },
     text: {
       type: String,
@@ -27,6 +35,29 @@ const messageSchema = new mongoose.Schema(
     video: {
       type: String,
       default: null,
+    },
+    pollOptions: {
+      type: Array,
+      default: [
+        {
+          option: {
+            type: String,
+            required: true,
+          },
+          votes: {
+            type: Number,
+            default: 0,
+          },
+          isVoted: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      ],
+    },
+    isPollVoted: {
+      type: Boolean,
+      default: false,
     },
     likesCount: {
       type: Number,

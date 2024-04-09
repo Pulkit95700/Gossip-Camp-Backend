@@ -117,10 +117,19 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     return res.status(400).json(new ApiResponse(400, "Invalid request"));
   }
 
+  // checking profileId is valid or not
+  let profile = await Profile.findById(profileId);
+
+  if (!profile) {
+    return res.status(404).json(new ApiError(404, "Profile not found"));
+  }
+
   // checking if message type is image
-  if (messageType === "Image" && !req.file) {
+  if ((messageType === "Image" || messageType == "ImagePoll") && !req.file) {
     return res.status(400).json(new ApiResponse(400, "Invalid request"));
   }
+
+  // =========================
   if (messageType === "Text") {
     try {
       let room = await Room.findById(roomId);
@@ -146,6 +155,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       console.log(err);
       return res.status(500).json(new ApiError(500, "Server Error"));
     }
+    // =========================
   } else if (messageType === "Image") {
     try {
       let room = await Room.findById(roomId);
@@ -205,6 +215,86 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     } catch (err) {
       res.status(500).json(new ApiError(500, "Server Error"));
     }
+    // =========================
+  } else if (messageType === "Poll" || messageType === "ImagePoll") {
+    try {
+      let room = await Room.findById(roomId);
+
+      if (!room) {
+        return res.status(404).json(new ApiError(404, "Room not found"));
+      }
+
+      let { pollOptions } = req.body;
+
+      if (!pollOptions || pollOptions.length < 2) {
+        return res
+          .status(400)
+          .json(new ApiError(400, "Poll must have atleast 2 options", pollOptions));
+      }
+
+      // checking if message type is image poll and if then uploa image to cloudinary and get url
+      let image = null;
+      if (messageType === "ImagePoll") {
+        let imagePath = req.file?.path;
+
+        if (!imagePath) {
+          return res
+            .status(400)
+            .json(
+              new ApiError(
+                400,
+                "Request must have an image if message type is image"
+              )
+            );
+        }
+
+        image = await uploadOnCloudinary(imagePath, "messages");
+
+        // checking if image is safe or not
+        const safeScore = await getSafeScoreOfImage(
+          image.secure_url.replace(/\\/g, "/")
+        );
+
+        if (safeScore < 0.6) {
+          // delete image from cloudinary
+          await deleteFromCloudinary(image.public_id);
+
+          console.log("deleted");
+          return res
+            .status(409)
+            .json(new ApiError(409, "Image is not safe to send", []));
+        }
+      }
+
+      let message = new Message({
+        profile: profileId,
+        room: roomId,
+        pollOptions: pollOptions.map((option) => ({
+          option: option,
+          votes: 0,
+          isVoted: false,
+        })),
+        text,
+        likesCount: 0,
+        messageType,
+        image: image
+          ? {
+              url: image.secure_url,
+              publicId: image.public_id,
+            }
+          : null,
+      });
+
+      await message.save();
+      await message.populate("profile", "fName lName avatar");
+
+      message.isLiked = false;
+
+      res.status(201).json(new ApiResponse(201, message, "Message sent"));
+    } catch (err) {
+      res.status(500).json(new ApiError(500, "Server Error"));
+    }
+    // =========================
   } else {
     res.status(400).json(new ApiError(400, "Invalid request"));
   }
@@ -281,7 +371,6 @@ const toggleLikeMessage = asyncHandler(async (req, res, next) => {
       message: message._id,
     });
 
-    console.log(like);
     if (like) {
       await Like.findByIdAndDelete(like._id);
       message.likesCount -= 1;

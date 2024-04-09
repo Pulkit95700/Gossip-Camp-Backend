@@ -1,6 +1,8 @@
 import { ClarifaiStub, grpc } from "clarifai-nodejs-grpc";
 import axios from "axios";
 
+
+
 const getSafeScoreOfImage = async (IMAGE_URL) => {
   const PAT = process.env.CLARIFAI_PAT_KEY;
   const USER_ID = process.env.CLARIFAI_USER_ID;
@@ -49,9 +51,11 @@ const getSafeScoreOfImage = async (IMAGE_URL) => {
           reject("No concepts found in response");
         }
 
-        const safeScore = output.data.concepts.find(
-          (concept) => concept.name === "sfw"
-        )?.value || output.data.concepts?.[0]?.value || 0;
+        const safeScore =
+          output.data.concepts.find((concept) => concept.name === "sfw")
+            ?.value ||
+          output.data.concepts?.[0]?.value ||
+          0;
 
         resolve(safeScore);
       }
