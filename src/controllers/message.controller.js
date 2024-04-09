@@ -84,10 +84,12 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
             "profile._id": 1,
             isLiked: 1,
             messageType: 1,
+            pollOptions: 1,
             likesCount: 1,
             text: 1,
             image: 1,
             video: 1,
+            isPollVoted: 1,
             updatedAt: 1,
           },
         },
@@ -226,10 +228,14 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 
       let { pollOptions } = req.body;
 
+      pollOptions = JSON.parse(pollOptions);
+
       if (!pollOptions || pollOptions.length < 2) {
         return res
           .status(400)
-          .json(new ApiError(400, "Poll must have atleast 2 options", pollOptions));
+          .json(
+            new ApiError(400, "Poll must have atleast 2 options", pollOptions)
+          );
       }
 
       // checking if message type is image poll and if then uploa image to cloudinary and get url
@@ -292,6 +298,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
+      console.log(err);
       res.status(500).json(new ApiError(500, "Server Error"));
     }
     // =========================
