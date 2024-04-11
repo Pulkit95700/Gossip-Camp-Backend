@@ -18,6 +18,8 @@ router.route("/:roomId/all").get(getRoomMessages);
 router.route("/send-message/:roomId").post(upload.single("image"), sendMessage);
 router.route("/toggle-like-message/:messageId").post(toggleLikeMessage);
 router.route("/delete-message/:messageId").delete(deleteMessage);
-router.route("/vote-poll/:roomId/:messageId/:optionIndex").post(votePollOption);
+router.route("/vote-poll/:roomId/:messageId/:optionIndex").post(
+  votePollOption
+);
 
 export { router };
