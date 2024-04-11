@@ -1,4 +1,4 @@
-import { PollOptionChoose } from "../models/PollOptionChoose.model.js";
+import { PollOptionChoose } from "../models/pollOptionChoose.model.js";
 import { Like } from "../models/like.model.js";
 import { Message } from "../models/message.model.js";
 import { Profile } from "../models/profile.model.js";
