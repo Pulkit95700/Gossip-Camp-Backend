@@ -1,3 +1,4 @@
+import { PollOptionChoose } from "../models/PollOptionChoose.model.js";
 import { Like } from "../models/like.model.js";
 import { Message } from "../models/message.model.js";
 import { Profile } from "../models/profile.model.js";
@@ -15,15 +16,14 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
   // write with MongoDB pipelines
   const { roomId } = req.params;
 
-  let room = await Room.findById(roomId);
-
-  if (!room) {
-    return res.status(404).json(new ApiResponse(404, "Room not found"));
-  }
-
-  const { page = 1, limit = 30 } = req.query;
-
   try {
+    let room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json(new ApiResponse(404, "Room not found"));
+    }
+
+    const { page = 1, limit = 30 } = req.query;
     let profile = await Profile.findOne({ user: req.user._id });
 
     const messages = await Message.aggregatePaginate(
@@ -76,6 +76,38 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
             },
           },
         },
+        // need to add isPollVoted property if the poll is voted by the user
+        {
+          $lookup: {
+            from: "polloptionchooses",
+            let: { messageId: "$_id", profileId: profile._id },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$poll", "$$messageId"] },
+                      { $eq: ["$profile", "$$profileId"] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "pollVote",
+          },
+        },
+        {
+          $addFields: {
+            // if poll is not voted by the user then pollIndex will be -1
+            pollIndex: {
+              $cond: {
+                if: { $eq: [{ $size: "$pollVote" }, 0] },
+                then: -1,
+                else: { $arrayElemAt: ["$pollVote.optionIndex", 0] },
+              },
+            },
+          },
+        },
         {
           $project: {
             "profile.avatar": 1,
@@ -85,6 +117,7 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
             isLiked: 1,
             messageType: 1,
             pollOptions: 1,
+            pollIndex: 1,
             likesCount: 1,
             text: 1,
             image: 1,
@@ -343,6 +376,16 @@ const deleteMessage = asyncHandler(async (req, res, next) => {
       await deleteFromCloudinary(message.image.publicId);
     }
 
+    if (message.messageType === "ImagePoll") {
+      await deleteFromCloudinary(message.image.publicId);
+    }
+
+    // delete all the likes on the message
+    await Like.deleteMany({ message: message._id });
+
+    // delete all the poll votes on the message
+    await PollOptionChoose.deleteMany({ poll: message._id });
+
     res
       .status(200)
       .json(new ApiResponse(200, {}, "Message deleted successfully"));
@@ -403,4 +446,111 @@ const toggleLikeMessage = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getRoomMessages, sendMessage, toggleLikeMessage, deleteMessage };
+const votePollOption = asyncHandler(async (req, res, next) => {
+  // we will have an index of the option that user selected
+  let { messageId, optionIndex, roomId } = req.params;
+
+  if (!messageId || !optionIndex || !roomId) {
+    return res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+
+  optionIndex = parseInt(optionIndex, 10);
+  try {
+    let profile = await Profile.findOne({ user: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json(new ApiError(404, "Profile not found"));
+    }
+
+    let room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json(new ApiError(404, "Room not found"));
+    }
+
+    let message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json(new ApiError(404, "Message not found"));
+    }
+
+    if (message.messageType !== "Poll" && message.messageType !== "ImagePoll") {
+      return res.status(400).json(new ApiError(400, "Message is not a poll"));
+    }
+
+    if (optionIndex >= message.pollOptions.length || optionIndex < -1) {
+      return res.status(400).json(new ApiError(400, "Invalid option index"));
+    }
+
+    let isPollVotedByUser = await PollOptionChoose.findOne({
+      poll: message._id,
+      profile: profile._id,
+    });
+
+    if (isPollVotedByUser) {
+      // find the voted poll
+      let pollOption = await PollOptionChoose.findOne({
+        poll: message._id,
+        profile: profile._id,
+      });
+
+      // delete the vote from the poll
+      await PollOptionChoose.findByIdAndDelete(pollOption._id);
+
+      // find the option that user selected
+      let option = message.pollOptions[pollOption.optionIndex];
+      option.votes = option.votes - 1;
+      message.pollOptions[pollOption.optionIndex] = option;
+
+      await message.save();
+    }
+
+    if (!isPollVotedByUser && optionIndex === -1) {
+      return res.status(400).json(new ApiError(400, "Invalid option index"));
+    }
+
+    if (optionIndex === -1) {
+      // user selected no option
+      // so we will remove the vote from the poll
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            message,
+            "Response to poll submitted successfully"
+          )
+        );
+    }
+
+    // now find the poll option and increment the votes
+    await PollOptionChoose.create({
+      poll: message._id,
+      optionIndex,
+      profile: profile._id,
+    });
+
+    let option = message.pollOptions[optionIndex];
+    option.votes = option.votes + 1;
+    message.pollOptions[optionIndex] = option;
+
+    await message.save();
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, "Response to poll submitted successfully")
+      );
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error", err));
+  }
+});
+
+export {
+  getRoomMessages,
+  sendMessage,
+  toggleLikeMessage,
+  deleteMessage,
+  votePollOption,
+};

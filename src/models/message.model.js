@@ -30,11 +30,9 @@ const messageSchema = new mongoose.Schema(
     },
     image: {
       type: Object,
-      default: null,
     },
     video: {
       type: String,
-      default: null,
     },
     pollOptions: {
       type: Array,
@@ -48,16 +46,8 @@ const messageSchema = new mongoose.Schema(
             type: Number,
             default: 0,
           },
-          isVoted: {
-            type: Boolean,
-            default: false,
-          },
         },
       ],
-    },
-    isPollVoted: {
-      type: Boolean,
-      default: false,
     },
     likesCount: {
       type: Number,
