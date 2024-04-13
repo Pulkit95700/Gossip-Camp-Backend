@@ -1,8 +1,6 @@
 import { ClarifaiStub, grpc } from "clarifai-nodejs-grpc";
 import axios from "axios";
 
-
-
 const getSafeScoreOfImage = async (IMAGE_URL) => {
   const PAT = process.env.CLARIFAI_PAT_KEY;
   const USER_ID = process.env.CLARIFAI_USER_ID;

@@ -122,7 +122,6 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
             text: 1,
             image: 1,
             video: 1,
-            isPollVoted: 1,
             updatedAt: 1,
           },
         },
@@ -311,7 +310,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         pollOptions: pollOptions.map((option) => ({
           option: option,
           votes: 0,
-          isVoted: false,
         })),
         text,
         likesCount: 0,

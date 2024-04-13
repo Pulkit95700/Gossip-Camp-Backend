@@ -9,3 +9,5 @@ export const LIKE_MESSAGE = "like-message";
 export const SEND_LIKE_MESSAGE = "send-like-message";
 export const DELETE_MESSAGE = "delete-message";
 export const SEND_DELETE_MESSAGE = "send-delete-message";
+export const POLL_VOTE = "poll-vote";
+export const SEND_POLL_VOTE = "send-poll-vote";
