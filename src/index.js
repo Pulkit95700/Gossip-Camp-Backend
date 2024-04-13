@@ -13,6 +13,7 @@ import {
   sendMessage,
   likeMessage,
   deleteMessage,
+  pollVote,
 } from "./sockets/message.events.js";
 import jwt from "jsonwebtoken";
 import {
@@ -22,6 +23,7 @@ import {
   LEAVE_ROOM,
   LIKE_MESSAGE,
   OPEN_ROOM,
+  POLL_VOTE,
   SEND_MESSAGE,
 } from "./sockets/events.js";
 
@@ -66,6 +68,7 @@ connectDB()
       socket.on(SEND_MESSAGE, (data) => sendMessage(io, socket, data));
       socket.on(LIKE_MESSAGE, (data) => likeMessage(io, socket, data));
       socket.on(DELETE_MESSAGE, (data) => deleteMessage(io, socket, data));
+      socket.on(POLL_VOTE, (data) => pollVote(io, socket, data));
 
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
