@@ -43,7 +43,7 @@ app.use(
   cookieParser({
     secure: true,
     sameSite: "none",
-    httpOnly: true,
+    httpOnly: process.env.PRODUCTION ? false : true,
   })
 );
 

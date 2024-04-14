@@ -52,7 +52,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     // setting the refresh and accesstoken in cookies
     const options = {
-      httpOnly: true,
+      httpOnly: process.env.PRODUCTION ? false : true,
       secure: process.env.NODE_ENV === "production" ? true : false,
     };
 
@@ -116,7 +116,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
     // setting the refresh and accesstoken in cookies
     const options = {
-      httpOnly: true,
+      httpOnly: process.env.PRODUCTION ? false : true,
       secure: true,
     };
 
@@ -211,7 +211,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
 
     // setting the refresh and accesstoken in cookies
     const options = {
-      httpOnly: true,
+      httpOnly: process.env.PRODUCTION ? false : true,
       secure: process.env.NODE_ENV === "production" ? true : false,
     };
 
