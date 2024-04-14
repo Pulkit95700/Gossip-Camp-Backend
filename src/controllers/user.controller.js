@@ -170,7 +170,9 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 // refresh token route
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken
+      ? req.cookies.refreshToken
+      : null;
 
     const decodedRefreshToken = await jwt.verify(
       refreshToken,
@@ -319,6 +321,8 @@ const createProfile = asyncHandler(async (req, res, next) => {
     const user = req.user;
     user.username = (fName + lName).toLowerCase();
     await user.save();
+
+    // create a message that the user has joined the room
 
     return res.status(201).json(
       new ApiResponse(

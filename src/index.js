@@ -26,6 +26,7 @@ import {
   POLL_VOTE,
   SEND_MESSAGE,
 } from "./sockets/events.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config({
   path: "./.env",
@@ -39,12 +40,24 @@ connectDB()
       cors: {
         origin: [process.env.CORS_ORIGIN, "http://localhost:3000"], // Replace with your Next.js frontend origin
         methods: ["GET", "POST", "DELETE"],
+        credentials: true,
       },
     });
 
     io.use(async (socket, next) => {
       try {
-        const token = socket.handshake.auth.token;
+        const cookies = socket.handshake.headers.cookie;
+        let token;
+
+        if (!cookies) return next(new Error("Authentication error"));
+
+        cookies.split(";").forEach((cookie) => {
+          const [key, value] = cookie.split("=");
+          if (key.trim() === "accessToken") {
+            token = value;
+          }
+        });
+
         const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         if (!payload) {
           return next(new Error("Invalid token"));

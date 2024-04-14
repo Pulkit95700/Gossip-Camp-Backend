@@ -5,18 +5,21 @@ import jwt from "jsonwebtoken";
 const auth = async (req, res, next) => {
   try {
     // check the access token and refresh token in cookies and set the user to req.user
-    const authHeader = req.headers.authorization; // Bearer token
+    // const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
 
-    const accessToken = authHeader.split(" ")[1];
-    // const refreshToken = req.cookies.refreshToken
-    //   ? req.cookies.refreshToken
-    //   : null;
+    // const accessToken = authHeader.split(" ")[1];
+    const refreshToken = req.cookies.refreshToken
+      ? req.cookies.refreshToken
+      : null;
+    const accessToken = req.cookies.accessToken
+      ? req.cookies.accessToken
+      : null;
 
-    // console.log(accessToken)
+    // console.log(accessToken);
     if (!accessToken) {
       return res
         .status(400)
@@ -29,7 +32,7 @@ const auth = async (req, res, next) => {
       process.env.ACCESS_TOKEN_SECRET
     );
 
-    // console.log(decodedAccessToken)
+    // console.log(decodedAccessToken);
 
     if (!decodedAccessToken) {
       return res.status(401).json(new ApiResponse(400, null, "Token Expired"));
