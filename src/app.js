@@ -44,6 +44,7 @@ app.use(
     secure: true,
     sameSite: "none",
     httpOnly: process.env.PRODUCTION ? false : true,
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7 * 1000),
   })
 );
 
