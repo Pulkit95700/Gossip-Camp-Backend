@@ -53,7 +53,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
     // setting the refresh and accesstoken in cookies
     const options = {
       httpOnly: process.env.PRODUCTION ? false : true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
+      secure: true,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
     };
 
     res.cookie("refreshToken", refreshToken, options);
@@ -118,6 +119,8 @@ const loginUser = asyncHandler(async (req, res, next) => {
     const options = {
       httpOnly: process.env.PRODUCTION ? false : true,
       secure: true,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
+
     };
 
     res.cookie("refreshToken", refreshToken, options);
@@ -213,6 +216,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
     const options = {
       httpOnly: process.env.PRODUCTION ? false : true,
       secure: true,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
     };
 
     res.cookie("refreshToken", refreshTokenNew, options);
