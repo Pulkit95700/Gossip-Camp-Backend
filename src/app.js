@@ -36,6 +36,8 @@ app.use(
   })
 );
 
+app.set("trust proxy", 1);
+
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
@@ -43,7 +45,7 @@ app.use(
   cookieParser({
     secure: true,
     sameSite: "none",
-    httpOnly: process.env.PRODUCTION ? false : true,
+    httpOnly: process.env.PRODUCTION ? true : false,
   })
 );
 
