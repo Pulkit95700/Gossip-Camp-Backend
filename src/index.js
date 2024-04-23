@@ -46,18 +46,7 @@ connectDB()
 
     io.use(async (socket, next) => {
       try {
-        const cookies = socket.handshake.headers.cookie;
-        let token;
-
-        if (!cookies) return next(new Error("Authentication error"));
-
-        cookies.split(";").forEach((cookie) => {
-          const [key, value] = cookie.split("=");
-          if (key.trim() === "accessToken") {
-            token = value;
-          }
-        });
-
+        const token = socket.handshake.auth.token;
         const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         if (!payload) {
           return next(new Error("Invalid token"));
