@@ -111,14 +111,12 @@ const loginUser = asyncHandler(async (req, res, next) => {
     let refreshToken = user.generateRefreshToken();
     let accessToken = user.generateAccessToken();
 
-    user.refreshToken = refreshToken;
     await user.save();
 
     // setting the refresh and accesstoken in cookies
     const options = {
       httpOnly: process.env.PRODUCTION === "true" ? true : false,
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
-
     };
 
     res.cookie("refreshToken", refreshToken, options);
@@ -171,9 +169,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 // refresh token route
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
-    const refreshToken = req.cookies.refreshToken
-      ? req.cookies.refreshToken
-      : null;
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     const decodedRefreshToken = await jwt.verify(
       refreshToken,
@@ -188,7 +184,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       console.log("refresh token is not valid");
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token is not valid"));
+        .json(new ApiResponse(401, null, "Refresh Token is not valid"));
     }
 
     if (!decodedRefreshToken) {
@@ -201,7 +197,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       console.log("refresh token expired");
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token Expired"));
+        .json(new ApiResponse(401, null, "Refresh Token Expired"));
     }
 
     let accessToken = user.generateAccessToken();

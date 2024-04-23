@@ -12,18 +12,16 @@ const auth = async (req, res, next) => {
     // }
 
     // const accessToken = authHeader.split(" ")[1];
-    const refreshToken = req.cookies.refreshToken
-      ? req.cookies.refreshToken
-      : null;
-    const accessToken = req.cookies.accessToken
-      ? req.cookies.accessToken
-      : null;
+    const accessToken =
+      req.cookies.accessToken ||
+      req.headers.authorization?.split(" ")[1] ||
+      null;
 
     // console.log(accessToken);
     if (!accessToken) {
       return res
-        .status(400)
-        .json(new ApiResponse(400, null, "Token  not found"));
+        .status(401)
+        .json(new ApiResponse(401, null, "Token not found"));
     }
 
     // decode and verify the access token
