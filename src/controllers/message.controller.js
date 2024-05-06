@@ -23,120 +23,120 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, "Room not found"));
     }
 
-    const { page = 1, limit = 30 } = req.query;
+    const { offset = 0, limit = 30 } = req.query;
     let profile = await Profile.findOne({ user: req.user._id });
 
-    const messages = await Message.aggregatePaginate(
-      Message.aggregate([
-        {
-          $match: { room: room._id },
-        },
-        {
-          $sort: { createdAt: -1 },
-        },
-        {
-          $lookup: {
-            from: "profiles",
-            localField: "profile",
-            foreignField: "_id",
-            as: "profile",
-          },
-        },
-        {
-          $unwind: "$profile",
-        },
-        // need to add isLiked property if the message is liked by the user
-        {
-          $lookup: {
-            from: "likes",
-            let: { messageId: "$_id", profileId: profile._id },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$message", "$$messageId"] },
-                      { $eq: ["$profile", "$$profileId"] },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "like",
-          },
-        },
-        {
-          $addFields: {
-            isLiked: {
-              $cond: {
-                if: { $eq: [{ $size: "$like" }, 0] },
-                then: false,
-                else: true,
-              },
-            },
-          },
-        },
-        // need to add isPollVoted property if the poll is voted by the user
-        {
-          $lookup: {
-            from: "polloptionchooses",
-            let: { messageId: "$_id", profileId: profile._id },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$poll", "$$messageId"] },
-                      { $eq: ["$profile", "$$profileId"] },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "pollVote",
-          },
-        },
-        {
-          $addFields: {
-            // if poll is not voted by the user then pollIndex will be -1
-            pollIndex: {
-              $cond: {
-                if: { $eq: [{ $size: "$pollVote" }, 0] },
-                then: -1,
-                else: { $arrayElemAt: ["$pollVote.optionIndex", 0] },
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            "profile.avatar": 1,
-            "profile.fName": 1,
-            "profile.lName": 1,
-            "profile._id": 1,
-            isLiked: 1,
-            messageType: 1,
-            pollOptions: 1,
-            pollIndex: 1,
-            likesCount: 1,
-            text: 1,
-            image: 1,
-            video: 1,
-            updatedAt: 1,
-          },
-        },
-      ]),
+    const messages = await Message.aggregate([
       {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-      }
-    );
+        $match: { room: room._id },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $lookup: {
+          from: "profiles",
+          localField: "profile",
+          foreignField: "_id",
+          as: "profile",
+        },
+      },
+      {
+        $unwind: "$profile",
+      },
+      // need to add isLiked property if the message is liked by the user
+      {
+        $lookup: {
+          from: "likes",
+          let: { messageId: "$_id", profileId: profile._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$message", "$$messageId"] },
+                    { $eq: ["$profile", "$$profileId"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "like",
+        },
+      },
+      {
+        $addFields: {
+          isLiked: {
+            $cond: {
+              if: { $eq: [{ $size: "$like" }, 0] },
+              then: false,
+              else: true,
+            },
+          },
+        },
+      },
+      // need to add isPollVoted property if the poll is voted by the user
+      {
+        $lookup: {
+          from: "polloptionchooses",
+          let: { messageId: "$_id", profileId: profile._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$poll", "$$messageId"] },
+                    { $eq: ["$profile", "$$profileId"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "pollVote",
+        },
+      },
+      {
+        $addFields: {
+          // if poll is not voted by the user then pollIndex will be -1
+          pollIndex: {
+            $cond: {
+              if: { $eq: [{ $size: "$pollVote" }, 0] },
+              then: -1,
+              else: { $arrayElemAt: ["$pollVote.optionIndex", 0] },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          "profile.avatar": 1,
+          "profile.fName": 1,
+          "profile.lName": 1,
+          "profile._id": 1,
+          isLiked: 1,
+          messageType: 1,
+          pollOptions: 1,
+          pollIndex: 1,
+          likesCount: 1,
+          text: 1,
+          image: 1,
+          video: 1,
+          updatedAt: 1,
+        },
+      },
+      {
+        $skip: parseInt(offset, 10) || 0,
+      },
+    ]);
 
-    messages.docs = messages.docs.reverse();
+    let count = await Message.find({ room: room._id }).countDocuments();
 
     return res
       .status(200)
-      .json(new ApiResponse(200, messages, "messages fetched successfully"));
+      .json(new ApiResponse(200, {
+          hasNextPage: count > parseInt(offset, 10) + parseInt(limit, 10),
+          docs: messages.reverse(),
+      }, "messages fetched successfully"));
   } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiError(500, "Server Error"));
