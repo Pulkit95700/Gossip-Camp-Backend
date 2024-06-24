@@ -1,5 +1,6 @@
 import { JoinRoom, Room } from "../models/room.model.js";
 import { Profile } from "../models/profile.model.js";
+import { Message } from "../models/message.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -53,6 +54,7 @@ const createPrivateRoom = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @POST /api/v1/rooms/create-public-room
 const createPublicRoom = asyncHandler(async (req, res, next) => {
   const { roomName, description, tags } = req.body;
 
@@ -485,7 +487,7 @@ const getRoomDetails = asyncHandler(async (req, res, next) => {
       return res.status(501).json(new ApiError(501, "Room Id is required"));
     }
 
-    const room = await Room.find({ roomId }).select(
+    const room = await Room.findById(roomId).select(
       "-__v -updatedAt -createdAt -adminProfile"
     );
 
@@ -748,6 +750,48 @@ const getTrendingRooms = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getRoomProfileDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const room = await Room.findById(roomId).select(
+      "-__v -updatedAt -createdAt"
+    );
+
+    if (!room) {
+      return res.status(501).json(new ApiError(501, "Room not found"));
+    }
+
+    const totalParticipants = await JoinRoom.find({
+      room: room._id,
+    }).countDocuments();
+
+    const totalMessages = await Message.find({
+      room: room._id,
+    }).countDocuments();
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...room._doc,
+          totalParticipants: totalParticipants,
+          totalMessages: totalMessages,
+          activityScore:
+            totalMessages / (totalParticipants === 0 ? 1 : totalParticipants),
+        },
+        "Room Profile Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
+  }
+});
+
 export {
   createPrivateRoom,
   createPublicRoom,
@@ -760,8 +804,8 @@ export {
   getRecentlyAddedRooms,
   getTrendingRooms,
   getRoomDetails,
+  getRoomProfileDetails,
 };
 
 // public jo user rooms
 // private jo college rooms
-// temp comment

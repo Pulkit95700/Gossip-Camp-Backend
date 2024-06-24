@@ -11,6 +11,7 @@ import {
   getAllCollegeRooms,
   getTrendingRooms,
   getRecentlyAddedRooms,
+  getRoomProfileDetails,
 } from "../controllers/room.controller.js";
 import auth from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -35,6 +36,7 @@ router.route("/private-room").get(auth, getPrivateJoinedRoom);
 router.route("/all-rooms").get(auth, getPublicRooms);
 
 router.route("/room-details/:roomId").get(auth, getRoomDetails);
+router.route("/room-profile/:roomId").get(auth, getRoomProfileDetails);
 
 router.route("/all-college-rooms").get(auth, getAllCollegeRooms);
 router

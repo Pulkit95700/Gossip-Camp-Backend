@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const likeSchema = new mongoose.Schema(
   {
-    user: {
+    profile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
