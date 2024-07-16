@@ -213,6 +213,11 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 
       let image = await uploadOnCloudinary(imagePath, "messages");
 
+      if(!image) {
+        console.log("Cannot upload image");
+        return res.status(500).json(new ApiError(500, "Cannot upload image"));
+      }
+
       // checking if image is safe or not
       const safeScore = await getSafeScoreOfImage(
         image.secure_url.replace(/\\/g, "/")
@@ -247,6 +252,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
+      console.log(err);
       res.status(500).json(new ApiError(500, "Server Error"));
     }
     // =========================
