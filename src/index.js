@@ -13,6 +13,7 @@ import {
   sendMessage,
   likeMessage,
   deleteMessage,
+  gossipVoteMessage,
   pollVote,
 } from "./sockets/message.events.js";
 import jwt from "jsonwebtoken";
@@ -22,6 +23,7 @@ import {
   JOIN_ROOM,
   LEAVE_ROOM,
   LIKE_MESSAGE,
+  GOSSIP_VOTE_MESSAGE,
   OPEN_ROOM,
   POLL_VOTE,
   SEND_MESSAGE,
@@ -69,6 +71,7 @@ connectDB()
       socket.on(LEAVE_ROOM, (data) => leaveRoom(io, socket, data));
       socket.on(SEND_MESSAGE, (data) => sendMessage(io, socket, data));
       socket.on(LIKE_MESSAGE, (data) => likeMessage(io, socket, data));
+      socket.on(GOSSIP_VOTE_MESSAGE, (data) => gossipVoteMessage(io, socket, data));
       socket.on(DELETE_MESSAGE, (data) => deleteMessage(io, socket, data));
       socket.on(POLL_VOTE, (data) => pollVote(io, socket, data));
 

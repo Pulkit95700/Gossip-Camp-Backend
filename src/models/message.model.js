@@ -22,6 +22,9 @@ const messageSchema = new mongoose.Schema(
         "Leave Room",
         "Poll",
         "ImagePoll",
+        "Gossip",
+        // poora same jo like main kiya hai wo yahaan bhi karna hai padega par isme check karna padega ki agar ek threshold
+        // se zyada votes aagye toh usko gossip main convert karna hai
       ],
     },
     text: {
@@ -53,6 +56,14 @@ const messageSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    gossipVotesCount: {
+      type: Number,
+      default: 0,
+    },
+    discussionsCount: {
+      type: Number,
+      default: 0,
+    }
   },
   {
     timestamps: true,

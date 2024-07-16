@@ -11,6 +11,7 @@ import {
   deleteFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
+import { GossipVote } from "../models/gossipVote.model.js";
 
 const getRoomMessages = asyncHandler(async (req, res, next) => {
   // write with MongoDB pipelines
@@ -65,10 +66,40 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
         },
       },
       {
+        $lookup: {
+          from: "gossipvotes",
+          let: { messageId: "$_id", profileId: profile._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$message", "$$messageId"] },
+                    { $eq: ["$profile", "$$profileId"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "gossipvote",
+        },
+      },
+      {
         $addFields: {
           isLiked: {
             $cond: {
               if: { $eq: [{ $size: "$like" }, 0] },
+              then: false,
+              else: true,
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          isGossipVoted: {
+            $cond: {
+              if: { $eq: [{ $size: "$gossipvote" }, 0] },
               then: false,
               else: true,
             },
@@ -114,9 +145,11 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
           "profile.lName": 1,
           "profile._id": 1,
           isLiked: 1,
+          isGossipVoted: 1,
           messageType: 1,
           pollOptions: 1,
           pollIndex: 1,
+          gossipVotesCount: 1,
           likesCount: 1,
           text: 1,
           image: 1,
@@ -451,6 +484,57 @@ const toggleLikeMessage = asyncHandler(async (req, res, next) => {
   }
 });
 
+const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
+  const { messageId } = req.params;
+
+  if (!messageId) {
+    return res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+
+  try {
+    let message = await Message.findById(messageId);
+
+    // console.log(message);
+    if (!message) {
+      return res.status(404).json(new ApiError(404, "Message not found"));
+    }
+
+    let profile = await Profile.findOne({ user: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json(new ApiError(404, "Profile not found"));
+    }
+
+    let gossipVote = await GossipVote.findOne({
+      profile: profile._id,
+      message: message._id,
+    });
+
+    if (gossipVote) {
+      await GossipVote.findByIdAndDelete(gossipVote._id);
+      message.gossipVotesCount -= 1;
+    } else {
+      await GossipVote.create({ profile: profile._id, message: message._id });
+      message.gossipVotesCount += 1;
+    }
+
+    await message.save();
+
+    if (gossipVote) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Message voting killed successfully"));
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Message voted successfully"));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error"));
+  }
+});
+
 const votePollOption = asyncHandler(async (req, res, next) => {
   // we will have an index of the option that user selected
   let { messageId, optionIndex, roomId } = req.params;
@@ -556,6 +640,7 @@ export {
   getRoomMessages,
   sendMessage,
   toggleLikeMessage,
+  toggleGossipVoteMessage,
   deleteMessage,
   votePollOption,
 };
