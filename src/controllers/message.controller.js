@@ -238,7 +238,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         profile: profileId,
         room: roomId,
         image: {
-          url: image.secure_url,
+          url: image.url,
           publicId: image.public_id,
         },
         text,
