@@ -297,7 +297,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 
         // checking if image is safe or not
         const safeScore = await getSafeScoreOfImage(
-          image.secure_url.replace(/\\/g, "/")
+          image.url.replace(/\\/g, "/")
         );
 
         if (safeScore < 0.6) {
@@ -323,7 +323,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         messageType,
         image: image
           ? {
-              url: image.secure_url,
+              url: image.url,
               publicId: image.public_id,
             }
           : null,
