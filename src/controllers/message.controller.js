@@ -209,6 +209,9 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         room: roomId,
         text,
         likesCount: 0,
+        isLiked: false,
+        isGossipVoted: false,
+        gossipVotesCount: 0,
         messageType,
       });
 
@@ -276,6 +279,9 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         },
         text,
         likesCount: 0,
+        isLiked: false,
+        isGossipVoted: false,
+        gossipVotesCount: 0,
         messageType,
       });
 
@@ -353,7 +359,10 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         })),
         text,
         likesCount: 0,
+        gossipVotesCount: 0,
         messageType,
+        isLiked: false,
+        isGossipVoted: false,
         image: image
           ? {
               url: image.url,
