@@ -209,8 +209,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         room: roomId,
         text,
         likesCount: 0,
-        isLiked: false,
-        isGossipVoted: false,
         gossipVotesCount: 0,
         messageType,
       });
@@ -218,7 +216,12 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.save();
       await message.populate("profile", "fName lName avatar");
 
+      // adding isLiked and isGossipVoted properties
+
+      message = message.toObject();
+      message.__v = undefined;
       message.isLiked = false;
+      message.isGossipVoted = false;
 
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
@@ -279,8 +282,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         },
         text,
         likesCount: 0,
-        isLiked: false,
-        isGossipVoted: false,
         gossipVotesCount: 0,
         messageType,
       });
@@ -288,8 +289,11 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.save();
 
       await message.populate("profile", "fName lName avatar");
+      
+      message = message.toObject();
+      message.__v = undefined;
       message.isLiked = false;
-
+      message.isGossipVoted = false;
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
       console.log(err);
@@ -361,8 +365,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
         likesCount: 0,
         gossipVotesCount: 0,
         messageType,
-        isLiked: false,
-        isGossipVoted: false,
         image: image
           ? {
               url: image.url,
@@ -374,8 +376,10 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.save();
       await message.populate("profile", "fName lName avatar");
 
+      message = message.toObject();
+      message.__v = undefined;
       message.isLiked = false;
-
+      message.isGossipVoted = false;
       res.status(201).json(new ApiResponse(201, message, "Message sent"));
     } catch (err) {
       console.log(err);
