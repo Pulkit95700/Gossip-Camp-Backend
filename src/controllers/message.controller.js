@@ -26,6 +26,8 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, "Room not found"));
     }
 
+    const { offset = 0, limit = 30 } = req.query;
+
     let profile = await Profile.findOne({ user: req.user._id });
 
     const messages = await Message.aggregate([
