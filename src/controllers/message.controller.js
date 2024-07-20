@@ -12,6 +12,8 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import { GossipVote } from "../models/gossipVote.model.js";
+import { GOSSIP_THRESHOLD } from "../constants.js";
+import { GossipMessage } from "../models/gossipMessage.model.js";
 
 const getRoomMessages = asyncHandler(async (req, res, next) => {
   // write with MongoDB pipelines
@@ -24,7 +26,6 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, "Room not found"));
     }
 
-    const { offset = 0, limit = 30 } = req.query;
     let profile = await Profile.findOne({ user: req.user._id });
 
     const messages = await Message.aggregate([
@@ -147,6 +148,7 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
           isLiked: 1,
           isGossipVoted: 1,
           messageType: 1,
+          isGossip: 1,
           pollOptions: 1,
           pollIndex: 1,
           gossipVotesCount: 1,
@@ -160,6 +162,9 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
       {
         $skip: parseInt(offset, 10) || 0,
       },
+      {
+        $limit: parseInt(limit, 10) || 30,
+      }
     ]);
 
     let count = await Message.find({ room: room._id }).countDocuments();
@@ -531,6 +536,10 @@ const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
       message.gossipVotesCount += 1;
     }
 
+    if(message.gossipVotesCount > GOSSIP_THRESHOLD){
+      message.isGossip = true;
+    }
+
     await message.save();
 
     if (gossipVote) {
@@ -649,6 +658,63 @@ const votePollOption = asyncHandler(async (req, res, next) => {
   }
 });
 
+const sendGossipMessage = asyncHandler(async (req, res, next) => {
+ //gossip message will only contain text
+ const {roomId, messageId} = req.params;
+ 
+  if(!roomId || !messageId){
+    return res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+
+  try {
+    let room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json(new ApiResponse(404, "Room not found"));
+    }
+
+    let message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json(new ApiResponse(404, "Message not found"));
+    }
+
+    let profile = await Profile.findOne({ user: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json(new ApiResponse(404, "Profile not found"));
+    }
+
+    // check if the user is authorized to send gossip message
+    if(!message.isGossip){
+      return res.status(403).json(new ApiResponse(403, "Gossip Message cannot be sent"));
+    }
+
+    // create a new message with the text of the gossip message
+
+    let gossipMessage = new GossipMessage({
+      profile: profile._id,
+      room: roomId,
+      parentMessage: messageId,
+      messageType: "Text",
+      text: req.body.text,
+    });
+
+    await gossipMessage.save();
+
+    await gossipMessage.populate("profile", "fName lName avatar");
+
+    gossipMessage = gossipMessage.toObject();
+
+    gossipMessage.__v = undefined;
+
+    res.status(201).json(new ApiResponse(201, gossipMessage, "Gossip Message sent successfully"));
+  }catch(err){
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error"));
+  }
+})
+
 export {
   getRoomMessages,
   sendMessage,
@@ -656,4 +722,5 @@ export {
   toggleGossipVoteMessage,
   deleteMessage,
   votePollOption,
+  sendGossipMessage,
 };

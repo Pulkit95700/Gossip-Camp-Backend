@@ -52,6 +52,10 @@ const messageSchema = new mongoose.Schema(
         },
       ],
     },
+    isGossipMessage: {
+      type: Boolean,
+      default: false,
+    },
     likesCount: {
       type: Number,
       default: 0,
@@ -63,7 +67,7 @@ const messageSchema = new mongoose.Schema(
     discussionsCount: {
       type: Number,
       default: 0,
-    }
+    },
   },
   {
     timestamps: true,
