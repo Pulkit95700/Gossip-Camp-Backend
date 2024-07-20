@@ -52,7 +52,7 @@ const messageSchema = new mongoose.Schema(
         },
       ],
     },
-    isGossipMessage: {
+    isGossip: {
       type: Boolean,
       default: false,
     },
