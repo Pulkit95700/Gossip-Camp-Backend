@@ -519,6 +519,10 @@ const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiError(404, "Message not found"));
     }
 
+    if(message.isGossip){
+      return res.status(403).json(new ApiError(403, "Gossip Message cannot be voted"));
+    }
+    
     let profile = await Profile.findOne({ user: req.user._id });
 
     if (!profile) {
@@ -540,6 +544,8 @@ const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
 
     if(message.gossipVotesCount > GOSSIP_THRESHOLD){
       message.isGossip = true;
+      // delete all the gossip votes on the message
+      await GossipVote.deleteMany({ message: message._id });
     }
 
     await message.save();
