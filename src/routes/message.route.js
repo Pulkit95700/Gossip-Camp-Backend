@@ -4,6 +4,7 @@ import {
   getRoomMessages,
   toggleLikeMessage,
   toggleGossipVoteMessage,
+  sendGossipMessage,
   sendMessage,
   deleteMessage,
   votePollOption,
@@ -23,5 +24,6 @@ router.route("/delete-message/:messageId").delete(deleteMessage);
 router.route("/vote-poll/:roomId/:messageId/:optionIndex").post(
   votePollOption
 );
+router.route("/send-gossip-message/:roomId/:messageId").post(sendGossipMessage);
 
 export { router };
