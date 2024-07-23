@@ -9,6 +9,7 @@ import {
   deleteMessage,
   votePollOption,
   getGossipMessages,
+  deleteGossipMessage,
 } from "../controllers/message.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -27,5 +28,6 @@ router.route("/vote-poll/:roomId/:messageId/:optionIndex").post(
 );
 router.route("/send-gossip-message/:roomId/:messageId").post(sendGossipMessage);  
 router.route("/get-gossip-messages/:roomId/:messageId").get(getGossipMessages);
+router.route("/delete-gossip-message/:gossipMessageId").delete(deleteGossipMessage);
 
 export { router };

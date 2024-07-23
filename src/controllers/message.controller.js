@@ -763,7 +763,7 @@ const getGossipMessages = asyncHandler(async (req, res, next) => {
       gossipMessage.__v = undefined;
       return gossipMessage;
     });
-    
+
     res
       .status(200)
       .json(
@@ -779,6 +779,47 @@ const getGossipMessages = asyncHandler(async (req, res, next) => {
   }
 });
 
+const deleteGossipMessage = asyncHandler(async (req, res, next) => {
+  const { gossipMessageId } = req.params;
+
+  if (!gossipMessageId) {
+    return res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+
+  try {
+    let gossipMessage = await GossipMessage.findByIdAndDelete(gossipMessageId);
+
+    if (!gossipMessage) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Gossip Message not found to delete"));
+    }
+
+    // check if gossip message is uploaded by the user
+
+    let profile = await Profile.findOne({ user: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json(new ApiError(404, "Profile not found"));
+    }
+
+    if (gossipMessage.profile.toString() !== profile._id.toString()) {
+      return res
+        .status(403)
+        .json(
+          new ApiError(403, "You are not authorized to delete this message")
+        );
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Gossip Message deleted successfully"));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error"));
+  }
+});
+
 export {
   getRoomMessages,
   sendMessage,
@@ -788,4 +829,5 @@ export {
   votePollOption,
   sendGossipMessage,
   getGossipMessages,
+  deleteGossipMessage,
 };
