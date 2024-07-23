@@ -756,20 +756,32 @@ const getGossipMessages = asyncHandler(async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip(offset)
       .limit(limit)
-      .populate("profile", "fName lName avatar")
-    
+      .populate("profile", "fName lName avatar");
+
     gossipMessages = gossipMessages.map((gossipMessage) => {
       gossipMessage = gossipMessage.toObject();
       gossipMessage.__v = undefined;
       return gossipMessage;
     });
 
+    let hasNextPage = await GossipMessage.find({
+      parentMessage: message._id,
+    })
+      .skip(parseInt(offset, 10) + parseInt(limit, 10))
+      .limit(1);
+
+    if (hasNextPage.length > 0) {
+      hasNextPage = true;
+    } else {
+      hasNextPage = false;
+    }
+
     res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          gossipMessages,
+          { docs: gossipMessages, hasNextPage },
           "Gossip Messages fetched successfully"
         )
       );
