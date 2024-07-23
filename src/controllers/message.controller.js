@@ -166,17 +166,21 @@ const getRoomMessages = asyncHandler(async (req, res, next) => {
       },
       {
         $limit: parseInt(limit, 10) || 30,
-      }
+      },
     ]);
 
     let count = await Message.find({ room: room._id }).countDocuments();
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
           hasNextPage: count > parseInt(offset, 10) + parseInt(limit, 10),
           docs: messages.reverse(),
-      }, "messages fetched successfully"));
+        },
+        "messages fetched successfully"
+      )
+    );
   } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiError(500, "Server Error"));
@@ -258,15 +262,14 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       }
 
       let image = await uploadOnCloudinary(imagePath, "messages");
-      
-      if(!image) {
+
+      if (!image) {
         console.log("Cannot upload image");
         return res.status(500).json(new ApiError(500, "Cannot upload image"));
       }
 
       // checking if image is safe or not
       const safeScore = await getSafeScoreOfImage(
-        
         image.url.replace(/\\/g, "/")
       );
 
@@ -296,7 +299,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       await message.save();
 
       await message.populate("profile", "fName lName avatar");
-      
+
       message = message.toObject();
       message.__v = undefined;
       message.isLiked = false;
@@ -519,10 +522,12 @@ const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
       return res.status(404).json(new ApiError(404, "Message not found"));
     }
 
-    if(message.isGossip){
-      return res.status(403).json(new ApiError(403, "Gossip Message cannot be voted"));
+    if (message.isGossip) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "Gossip Message cannot be voted"));
     }
-    
+
     let profile = await Profile.findOne({ user: req.user._id });
 
     if (!profile) {
@@ -542,7 +547,7 @@ const toggleGossipVoteMessage = asyncHandler(async (req, res, next) => {
       message.gossipVotesCount += 1;
     }
 
-    if(message.gossipVotesCount > GOSSIP_THRESHOLD){
+    if (message.gossipVotesCount > GOSSIP_THRESHOLD) {
       message.isGossip = true;
       // delete all the gossip votes on the message
       await GossipVote.deleteMany({ message: message._id });
@@ -667,10 +672,10 @@ const votePollOption = asyncHandler(async (req, res, next) => {
 });
 
 const sendGossipMessage = asyncHandler(async (req, res, next) => {
- //gossip message will only contain text
- const {roomId, messageId} = req.params;
- 
-  if(!roomId || !messageId){
+  //gossip message will only contain text
+  const { roomId, messageId } = req.params;
+
+  if (!roomId || !messageId) {
     return res.status(400).json(new ApiError(400, "Invalid request"));
   }
 
@@ -694,8 +699,10 @@ const sendGossipMessage = asyncHandler(async (req, res, next) => {
     }
 
     // check if the user is authorized to send gossip message
-    if(!message.isGossip){
-      return res.status(403).json(new ApiResponse(403, "Gossip Message cannot be sent"));
+    if (!message.isGossip) {
+      return res
+        .status(403)
+        .json(new ApiResponse(403, "Gossip Message cannot be sent"));
     }
 
     // create a new message with the text of the gossip message
@@ -716,12 +723,61 @@ const sendGossipMessage = asyncHandler(async (req, res, next) => {
 
     gossipMessage.__v = undefined;
 
-    res.status(201).json(new ApiResponse(201, gossipMessage, "Gossip Message sent successfully"));
-  }catch(err){
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, gossipMessage, "Gossip Message sent successfully")
+      );
+  } catch (err) {
     console.log(err);
     return res.status(500).json(new ApiError(500, "Server Error"));
   }
-})
+});
+
+const getGossipMessages = asyncHandler(async (req, res, next) => {
+  const { messageId } = req.params;
+  const { offset = 0, limit = 20 } = req.query;
+
+  if (!messageId) {
+    return res.status(400).json(new ApiError(400, "Invalid request"));
+  }
+
+  try {
+    let message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json(new ApiError(404, "Message not found"));
+    }
+
+    // using pagination for gossip messages
+    let gossipMessages = await GossipMessage.find({
+      parentMessage: message._id,
+    })
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit)
+      .populate("profile", "fName lName avatar")
+    
+    gossipMessages = gossipMessages.map((gossipMessage) => {
+      gossipMessage = gossipMessage.toObject();
+      gossipMessage.__v = undefined;
+      return gossipMessage;
+    });
+    
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          gossipMessages,
+          "Gossip Messages fetched successfully"
+        )
+      );
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(new ApiError(500, "Server Error"));
+  }
+});
 
 export {
   getRoomMessages,
@@ -731,4 +787,5 @@ export {
   deleteMessage,
   votePollOption,
   sendGossipMessage,
+  getGossipMessages,
 };
