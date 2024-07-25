@@ -52,5 +52,16 @@ const closeRoom = async (io, socket, data) => {
   socket.leave(roomId);
 };
 
+const openGossipRoom = (io, socket, data) => {
+  const roomId = data.roomId;
+  socket.join(roomId + "=" + data.messageId);
+  console.log("Gossip Room Opened", roomId + "=" + data.messageId);
+};
 
-export { openRoom, joinRoom, leaveRoom, closeRoom };
+const closeGossipRoom = (io, socket, data) => {
+  const roomId = data.roomId;
+  socket.leave(roomId + "=" + data.messageId);
+  console.log("Gossip Room Closed", roomId + "=" + data.messageId);
+}
+
+export { openRoom, joinRoom, leaveRoom, closeRoom, openGossipRoom, closeGossipRoom };

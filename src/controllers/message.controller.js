@@ -776,12 +776,13 @@ const getGossipMessages = asyncHandler(async (req, res, next) => {
       hasNextPage = false;
     }
 
+
     res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { docs: gossipMessages, hasNextPage },
+          { docs: gossipMessages.reverse(), hasNextPage },
           "Gossip Messages fetched successfully"
         )
       );

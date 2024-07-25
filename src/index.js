@@ -8,12 +8,15 @@ import {
   joinRoom,
   leaveRoom,
   closeRoom,
+  openGossipRoom,
+  closeGossipRoom,
 } from "./sockets/room.events.js";
 import {
   sendMessage,
   likeMessage,
   deleteMessage,
   gossipVoteMessage,
+  sendGossipMessage,
   pollVote,
 } from "./sockets/message.events.js";
 import jwt from "jsonwebtoken";
@@ -27,6 +30,9 @@ import {
   OPEN_ROOM,
   POLL_VOTE,
   SEND_MESSAGE,
+  OPEN_GOSSIP_ROOM,
+  CLOSE_GOSSIP_ROOM,
+  SEND_GOSSIP_MESSAGE,
 } from "./sockets/events.js";
 import cookieParser from "cookie-parser";
 
@@ -74,6 +80,9 @@ connectDB()
       socket.on(GOSSIP_VOTE_MESSAGE, (data) => gossipVoteMessage(io, socket, data));
       socket.on(DELETE_MESSAGE, (data) => deleteMessage(io, socket, data));
       socket.on(POLL_VOTE, (data) => pollVote(io, socket, data));
+      socket.on(OPEN_GOSSIP_ROOM, (data) => openGossipRoom(io, socket, data));
+      socket.on(CLOSE_GOSSIP_ROOM, (data) => closeGossipRoom(io, socket, data));
+      socket.on(SEND_GOSSIP_MESSAGE, (data) => sendGossipMessage(io, socket, data));
 
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
