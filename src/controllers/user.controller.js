@@ -6,6 +6,7 @@ import { JoinRoom, Room } from "../models/room.model.js";
 import jwt from "jsonwebtoken";
 import { Profile } from "../models/profile.model.js";
 import { v4 } from "uuid";
+import { Message } from "../models/message.model.js";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -282,6 +283,8 @@ const getUserData = asyncHandler(async (req, res, next) => {
   }
 });
 
+// profile related routes
+
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
     let { fName, lName, avatarUrl } = req.body;
@@ -371,6 +374,70 @@ const handleToggleFollow = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getUserGossipsDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const { offset = 0, limit = 20} = req.query;
+
+    const profile = await Profile.findOne({ username: username }).select(
+      "fName lName username avatar bio"
+    );
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Profile not found"));
+    }
+
+    let gossipMessages = await Message.aggregate([
+      {
+        $match: {
+          profile: profile._id,
+          isGossip: true,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $skip: parseInt(offset, 10),
+      },
+      {
+        $limit: parseInt(limit, 10),
+      },
+    ]);
+
+    gossipMessages = gossipMessages.map((message) => {
+      message.__v = undefined;
+      message.pollOptions = undefined;
+      return message;
+    })
+    let totalGossipMessages = await Message.countDocuments({
+      profile: profile._id,
+      isGossip: true,
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            profile,
+            gossipMessages,
+            totalGossipMessages,
+            hasNextPage: totalGossipMessages > offset + limit,
+          },
+          "Profile and Gossip messages fetched successfully"
+        )
+      );
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
 export {
   registerUser,
   loginUser,
@@ -380,4 +447,5 @@ export {
   createProfile,
   getUserData,
   handleToggleFollow,
+  getUserGossipsDetails
 };
