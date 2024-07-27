@@ -6,6 +6,7 @@ import { Follow } from "../models/follow.model.js";
 import { User } from "../models/user.model.js";
 import { Message } from "../models/message.model.js";
 import { generateStats } from "../utils/Profile.utils.js";
+import { JoinRoom, Room } from "../models/room.model.js";
 
 const getAllUserProfiles = asyncHandler(async (req, res, next) => {
   // get paginated user profiles
@@ -178,7 +179,7 @@ const getProfile = asyncHandler(async (req, res, next) => {
 const getUserGossipsDetails = asyncHandler(async (req, res, next) => {
   try {
     const { username } = req.params;
-    const { offset = 0, limit = 20} = req.query;
+    const { offset = 0, limit = 20 } = req.query;
 
     const profile = await Profile.findOne({ username: username }).select(
       "fName lName username avatar bio"
@@ -214,29 +215,111 @@ const getUserGossipsDetails = asyncHandler(async (req, res, next) => {
       message.__v = undefined;
       message.pollOptions = undefined;
       return message;
-    })
+    });
     let totalGossipMessages = await Message.countDocuments({
       profile: profile._id,
       isGossip: true,
     });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          profile,
+          gossipMessages,
+          totalGossipMessages,
+          hasNextPage: totalGossipMessages > offset + limit,
+        },
+        "Profile and Gossip messages fetched successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
+const getUserRoomDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const { offset = 0, limit = 20 } = req.query;
+
+    const profile = await Profile.findOne({ username: username }).select(
+      "fName lName username avatar bio"
+    );
+    // using aggregation pipelines and also count the number of participants in each room
+    const joinRooms = await JoinRoom.find({
+      user: req.user._id,
+    }).select("room");
+
+    const roomIds = joinRooms.map((room) => room.room);
+
+    const rooms = await Room.aggregate([
+      {
+        $match: {
+          _id: { $in: roomIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "joinrooms",
+          localField: "_id",
+          foreignField: "room",
+          as: "participants",
+        },
+      },
+      {
+        $addFields: {
+          participantsCount: { $size: "$participants" },
+        },
+      },
+      {
+        $lookup: {
+          from: "profiles",
+          localField: "adminProfile",
+          foreignField: "_id",
+          as: "adminProfile",
+        },
+      },
+      {
+        $project: {
+          participants: 0,
+          "adminProfile.__v": 0,
+          "adminProfile.createdAt": 0,
+          "adminProfile.updatedAt": 0,
+          "adminProfile.user": 0,
+          __v: 0,
+          createdAt: 0,
+          updatedAt: 0, 
+        },
+      },
+      {
+        $skip: parseInt(offset, 10),
+      },
+      {
+        $limit: parseInt(limit, 10),
+      },
+    ]);
+
+    const totalRooms = roomIds.length;
 
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          {
-            profile,
-            gossipMessages,
-            totalGossipMessages,
-            hasNextPage: totalGossipMessages > offset + limit,
-          },
-          "Profile and Gossip messages fetched successfully"
+          { rooms, totalRooms, hasNextPage: totalRooms > offset + limit },
+          "Rooms fetched successfully"
         )
       );
-  } catch (err) {
-    return res.status(500).json(new ApiResponse(500, null, err.message));
+  } catch (error) {
+    console.log(error);
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
   }
 });
 
-export { getAllUserProfiles, getProfile, getUserGossipsDetails };
+export {
+  getAllUserProfiles,
+  getProfile,
+  getUserGossipsDetails,
+  getUserRoomDetails,
+};

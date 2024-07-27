@@ -446,7 +446,9 @@ const deleteMessage = asyncHandler(async (req, res, next) => {
 
     // delete all the poll votes on the message
     await PollOptionChoose.deleteMany({ poll: message._id });
-
+    await GossipVote.deleteMany({ message: message._id });
+    await Message.deleteMany({ parentMessage: message._id });
+    
     res
       .status(200)
       .json(new ApiResponse(200, {}, "Message deleted successfully"));
@@ -717,6 +719,10 @@ const sendGossipMessage = asyncHandler(async (req, res, next) => {
 
     await gossipMessage.save();
 
+    // add to the discussion count of the parent message
+    message.discussionCount += 1;
+    await message.save();
+
     await gossipMessage.populate("profile", "fName lName avatar");
 
     gossipMessage = gossipMessage.toObject();
@@ -815,6 +821,11 @@ const deleteGossipMessage = asyncHandler(async (req, res, next) => {
     if (!profile) {
       return res.status(404).json(new ApiError(404, "Profile not found"));
     }
+
+    // decrement the discussion count of the parent message
+    let message = await Message.findByIdAndUpdate(gossipMessage.parentMessage, {
+      $inc: { discussionCount: -1 },
+    })
 
     if (gossipMessage.profile.toString() !== profile._id.toString()) {
       return res

@@ -39,18 +39,18 @@ const messageSchema = new mongoose.Schema(
     },
     pollOptions: {
       type: Array,
-      default: [
-        {
-          option: {
-            type: String,
-            required: true,
-          },
-          votes: {
-            type: Number,
-            default: 0,
-          },
-        },
-      ],
+      // default: [
+      //   {
+      //     option: {
+      //       type: String,
+      //       required: true,
+      //     },
+      //     votes: {
+      //       type: Number,
+      //       default: 0,
+      //     },
+      //   },
+      // ],
     },
     isGossip: {
       type: Boolean,
