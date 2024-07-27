@@ -243,7 +243,7 @@ const getUserRoomDetails = asyncHandler(async (req, res, next) => {
     const { username } = req.params;
     const { offset = 0, limit = 20 } = req.query;
 
-    const profile = await Profile.findOne({ username: username })
+    const profile = await Profile.findOne({ username: username });
     // using aggregation pipelines and also count the number of participants in each room
     const joinRooms = await JoinRoom.find({
       user: profile.user,
@@ -287,7 +287,7 @@ const getUserRoomDetails = asyncHandler(async (req, res, next) => {
           "adminProfile.user": 0,
           __v: 0,
           createdAt: 0,
-          updatedAt: 0, 
+          updatedAt: 0,
         },
       },
       {
@@ -315,9 +315,97 @@ const getUserRoomDetails = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getUserFollowersDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const { offset = 0, limit = 20 } = req.query;
+
+    const profile = await Profile.findOne({ username: username });
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Profile not found"));
+    }
+
+    let followers = await Follow.find({
+      following: profile.user,
+    }).select("follower");
+
+    followers = followers.map((follower) => follower.follower);
+
+    followers = await Profile.find({
+      user: { $in: followers },
+    }).select("fName lName username avatar bio");
+
+    let totalFollowers = await Follow.countDocuments({
+      following: profile.user,
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          followers,
+          totalFollowers,
+          hasNextPage: totalFollowers > offset + limit,
+        },
+        "Followers fetched successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
+const getUserFollowingDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const { offset = 0, limit = 20 } = req.query;
+
+    const profile = await Profile.findOne({ username: username });
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Profile not found"));
+    }
+
+    let following = await Follow.find({
+      follower: profile.user,
+    }).select("following");
+
+    following = following.map((following) => following.following);
+
+    following = await Profile.find({
+      user: { $in: following },
+    }).select("fName lName username avatar bio");
+
+    let totalFollowing = await Follow.countDocuments({
+      following: profile.user,
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          following,
+          totalFollowing,
+          hasNextPage: totalFollowing > offset + limit,
+        },
+        "Followers fetched successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(500).json(new ApiResponse(500, null, err.message));
+  }
+});
+
 export {
   getAllUserProfiles,
   getProfile,
   getUserGossipsDetails,
   getUserRoomDetails,
+  getUserFollowersDetails,
+  getUserFollowingDetails,
 };
