@@ -243,12 +243,10 @@ const getUserRoomDetails = asyncHandler(async (req, res, next) => {
     const { username } = req.params;
     const { offset = 0, limit = 20 } = req.query;
 
-    const profile = await Profile.findOne({ username: username }).select(
-      "fName lName username avatar bio"
-    );
+    const profile = await Profile.findOne({ username: username })
     // using aggregation pipelines and also count the number of participants in each room
     const joinRooms = await JoinRoom.find({
-      user: req.user._id,
+      user: profile.user,
     }).select("room");
 
     const roomIds = joinRooms.map((room) => room.room);
