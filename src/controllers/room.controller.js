@@ -1,5 +1,6 @@
 import { JoinRoom, Room } from "../models/room.model.js";
 import { Profile } from "../models/profile.model.js";
+import { Message } from "../models/message.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -53,6 +54,7 @@ const createPrivateRoom = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @POST /api/v1/rooms/create-public-room
 const createPublicRoom = asyncHandler(async (req, res, next) => {
   const { roomName, description, tags } = req.body;
 
@@ -485,7 +487,7 @@ const getRoomDetails = asyncHandler(async (req, res, next) => {
       return res.status(501).json(new ApiError(501, "Room Id is required"));
     }
 
-    const room = await Room.find({ roomId }).select(
+    const room = await Room.findById(roomId).select(
       "-__v -updatedAt -createdAt -adminProfile"
     );
 
@@ -748,6 +750,119 @@ const getTrendingRooms = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getRoomProfileDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const room = await Room.findById(roomId).select(
+      "-__v -updatedAt -createdAt"
+    );
+
+    if (!room) {
+      return res.status(501).json(new ApiError(501, "Room not found"));
+    }
+
+    const totalParticipants = await JoinRoom.find({
+      room: room._id,
+    }).countDocuments();
+
+    const totalMessages = await Message.find({
+      room: room._id,
+    }).countDocuments();
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...room._doc,
+          totalParticipants: totalParticipants,
+          totalMessages: totalMessages,
+          activityScore:
+            totalMessages / (totalParticipants === 0 ? 1 : totalParticipants),
+        },
+        "Room Profile Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, "Something went wrong"));
+  }
+});
+
+const getGossipMessagesInRoom = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    let { offset = 0, limit = 10 } = req.query;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const messages = await Message.find({
+      room: roomId,
+      isGossip: true,
+    })
+      .sort("-createdAt")
+      .skip(offset)
+      .limit(limit)
+      .populate("profile", "fName lName avatar username").select("-__v");
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          messages,
+        },
+        "Gossip Messages Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, err.message));
+  }
+});
+
+const getRoomMembers = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { offset = 0, limit = 10 } = req.query;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    let members = await JoinRoom.find({
+      room: roomId,
+    }).skip(offset).limit(limit)
+
+    members = members.map((member) => member.user)
+
+    let profiles = [];
+
+    for (let i = 0; i < members.length; i++) {
+      const profile = await Profile.findOne({
+        user: members[i],
+      }).select("-__v -updatedAt -createdAt -user");
+
+      if(profile){
+        profiles.push(profile);
+      }
+    }
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        profiles,
+        "Room Members Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, err.message));
+  }
+})
+
 export {
   createPrivateRoom,
   createPublicRoom,
@@ -760,8 +875,10 @@ export {
   getRecentlyAddedRooms,
   getTrendingRooms,
   getRoomDetails,
+  getRoomProfileDetails,
+  getGossipMessagesInRoom,
+  getRoomMembers,
 };
 
 // public jo user rooms
 // private jo college rooms
-// temp comment

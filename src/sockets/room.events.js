@@ -3,13 +3,11 @@ import { MESSAGE } from "./events.js";
 
 const openRoom = (io, socket, data) => {
   const roomId = data.roomId;
-  console.log("open room", roomId);
   socket.join(roomId);
 };
 
 const joinRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  console.log("join room", roomId, data.username);
   try {
     const message = new Message({
       profile: data.profileId,
@@ -19,7 +17,6 @@ const joinRoom = async (io, socket, data) => {
     });
 
     await message.save();
-    console.log(message);
 
     await socket.to(roomId).emit(MESSAGE, message);
   } catch (err) {
@@ -29,7 +26,6 @@ const joinRoom = async (io, socket, data) => {
 
 const leaveRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  console.log("leave room", roomId, data.userId, data.username);
   try {
     const message = new Message({
       profile: data.profileId,
@@ -39,7 +35,6 @@ const leaveRoom = async (io, socket, data) => {
     });
 
     await message.save();
-    console.log(message);
     socket.to(roomId).emit(MESSAGE, {
       _id: message._id,
       messageType: "Leave Room",
@@ -54,8 +49,19 @@ const leaveRoom = async (io, socket, data) => {
 
 const closeRoom = async (io, socket, data) => {
   const roomId = data.roomId;
-  console.log("close room", roomId);
   socket.leave(roomId);
 };
 
-export { openRoom, joinRoom, leaveRoom, closeRoom };
+const openGossipRoom = (io, socket, data) => {
+  const roomId = data.roomId;
+  socket.join(roomId + "=" + data.messageId);
+  console.log("Gossip Room Opened", roomId + "=" + data.messageId);
+};
+
+const closeGossipRoom = (io, socket, data) => {
+  const roomId = data.roomId;
+  socket.leave(roomId + "=" + data.messageId);
+  console.log("Gossip Room Closed", roomId + "=" + data.messageId);
+}
+
+export { openRoom, joinRoom, leaveRoom, closeRoom, openGossipRoom, closeGossipRoom };

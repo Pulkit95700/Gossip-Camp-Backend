@@ -20,7 +20,6 @@ router.route("/login").post(loginUser);
 router.route("/change-password").post(auth, changePassword);
 router.route("/create-profile").post(auth, createProfile);
 router.route("/refresh").post(refreshUserToken);
-
 // interactive route
 router.route("/toggle-follow/:id").get(auth, handleToggleFollow);
 export { router };

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const likeSchema = new mongoose.Schema(
+const gossipVoteSchema = new mongoose.Schema(
   {
     profile: {
       type: mongoose.Schema.Types.ObjectId,
@@ -16,4 +16,4 @@ const likeSchema = new mongoose.Schema(
   }
 );
 
-export const Like = mongoose.model("Like", likeSchema);
+export const GossipVote = mongoose.model("gossipvote", gossipVoteSchema);

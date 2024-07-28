@@ -14,19 +14,59 @@ const messageSchema = new mongoose.Schema(
     messageType: {
       type: String,
       required: true,
-      enum: ["Text", "Image", "Video", "Join Room", "Leave Room"],
+      enum: [
+        "Text",
+        "Image",
+        "Video",
+        "Join Room",
+        "Leave Room",
+        "Poll",
+        "ImagePoll",
+        "Gossip",
+        // poora same jo like main kiya hai wo yahaan bhi karna hai padega par isme check karna padega ki agar ek threshold
+        // se zyada votes aagye toh usko gossip main convert karna hai
+      ],
     },
     text: {
       type: String,
       default: "",
     },
     image: {
-      type: String,
-      default: null,
+      type: Object,
     },
     video: {
       type: String,
-      default: null,
+    },
+    pollOptions: {
+      type: Array,
+      // default: [
+      //   {
+      //     option: {
+      //       type: String,
+      //       required: true,
+      //     },
+      //     votes: {
+      //       type: Number,
+      //       default: 0,
+      //     },
+      //   },
+      // ],
+    },
+    isGossip: {
+      type: Boolean,
+      default: false,
+    },
+    likesCount: {
+      type: Number,
+      default: 0,
+    },
+    gossipVotesCount: {
+      type: Number,
+      default: 0,
+    },
+    discussionsCount: {
+      type: Number,
+      default: 0,
     },
   },
   {

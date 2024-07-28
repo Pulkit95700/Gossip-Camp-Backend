@@ -6,6 +6,7 @@ import { JoinRoom, Room } from "../models/room.model.js";
 import jwt from "jsonwebtoken";
 import { Profile } from "../models/profile.model.js";
 import { v4 } from "uuid";
+import { Message } from "../models/message.model.js";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -51,13 +52,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
     await JoinRoom.create({ user: user, room: room });
 
     // setting the refresh and accesstoken in cookies
-    // const options = {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production" ? true : false,
-    // };
+    const options = {
+      httpOnly: process.env.PRODUCTION === "true" ? true : false,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
+    };
 
-    // res.cookie("refreshToken", refreshToken, options);
-    // res.cookie("accessToken", accessToken, options);
+    res.cookie("refreshToken", refreshToken, options);
+    res.cookie("accessToken", accessToken, options);
 
     user.password = undefined;
     user.refreshToken = undefined;
@@ -111,13 +112,12 @@ const loginUser = asyncHandler(async (req, res, next) => {
     let refreshToken = user.generateRefreshToken();
     let accessToken = user.generateAccessToken();
 
-    user.refreshToken = refreshToken;
     await user.save();
 
     // setting the refresh and accesstoken in cookies
     const options = {
-      httpOnly: true,
-      secure: true,
+      httpOnly: process.env.PRODUCTION === "true" ? true : false,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
     };
 
     res.cookie("refreshToken", refreshToken, options);
@@ -170,7 +170,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 // refresh token route
 const refreshUserToken = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     const decodedRefreshToken = await jwt.verify(
       refreshToken,
@@ -185,7 +185,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       console.log("refresh token is not valid");
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token is not valid"));
+        .json(new ApiResponse(401, null, "Refresh Token is not valid"));
     }
 
     if (!decodedRefreshToken) {
@@ -198,7 +198,7 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
       console.log("refresh token expired");
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Refresh Token Expired"));
+        .json(new ApiResponse(401, null, "Refresh Token Expired"));
     }
 
     let accessToken = user.generateAccessToken();
@@ -209,8 +209,8 @@ const refreshUserToken = asyncHandler(async (req, res, next) => {
 
     // setting the refresh and accesstoken in cookies
     const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
+      httpOnly: process.env.PRODUCTION === "true" ? true : false,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 7000),
     };
 
     res.cookie("refreshToken", refreshTokenNew, options);
@@ -283,6 +283,8 @@ const getUserData = asyncHandler(async (req, res, next) => {
   }
 });
 
+// profile related routes
+
 const createProfile = asyncHandler(async (req, res, next) => {
   try {
     let { fName, lName, avatarUrl } = req.body;
@@ -319,6 +321,8 @@ const createProfile = asyncHandler(async (req, res, next) => {
     const user = req.user;
     user.username = (fName + lName).toLowerCase();
     await user.save();
+
+    // create a message that the user has joined the room
 
     return res.status(201).json(
       new ApiResponse(
@@ -369,6 +373,7 @@ const handleToggleFollow = asyncHandler(async (req, res, next) => {
     return res.status(500).json(new ApiResponse(500, null, err.message));
   }
 });
+
 
 export {
   registerUser,

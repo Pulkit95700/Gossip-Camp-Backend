@@ -8,16 +8,33 @@ import {
   joinRoom,
   leaveRoom,
   closeRoom,
+  openGossipRoom,
+  closeGossipRoom,
 } from "./sockets/room.events.js";
-import { sendMessage } from "./sockets/message.events.js";
+import {
+  sendMessage,
+  likeMessage,
+  deleteMessage,
+  gossipVoteMessage,
+  sendGossipMessage,
+  pollVote,
+} from "./sockets/message.events.js";
 import jwt from "jsonwebtoken";
 import {
   CLOSE_ROOM,
+  DELETE_MESSAGE,
   JOIN_ROOM,
   LEAVE_ROOM,
+  LIKE_MESSAGE,
+  GOSSIP_VOTE_MESSAGE,
   OPEN_ROOM,
+  POLL_VOTE,
   SEND_MESSAGE,
+  OPEN_GOSSIP_ROOM,
+  CLOSE_GOSSIP_ROOM,
+  SEND_GOSSIP_MESSAGE,
 } from "./sockets/events.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config({
   path: "./.env",
@@ -31,6 +48,7 @@ connectDB()
       cors: {
         origin: [process.env.CORS_ORIGIN, "http://localhost:3000"], // Replace with your Next.js frontend origin
         methods: ["GET", "POST", "DELETE"],
+        credentials: true,
       },
     });
 
@@ -58,6 +76,13 @@ connectDB()
       socket.on(JOIN_ROOM, (data) => joinRoom(io, socket, data));
       socket.on(LEAVE_ROOM, (data) => leaveRoom(io, socket, data));
       socket.on(SEND_MESSAGE, (data) => sendMessage(io, socket, data));
+      socket.on(LIKE_MESSAGE, (data) => likeMessage(io, socket, data));
+      socket.on(GOSSIP_VOTE_MESSAGE, (data) => gossipVoteMessage(io, socket, data));
+      socket.on(DELETE_MESSAGE, (data) => deleteMessage(io, socket, data));
+      socket.on(POLL_VOTE, (data) => pollVote(io, socket, data));
+      socket.on(OPEN_GOSSIP_ROOM, (data) => openGossipRoom(io, socket, data));
+      socket.on(CLOSE_GOSSIP_ROOM, (data) => closeGossipRoom(io, socket, data));
+      socket.on(SEND_GOSSIP_MESSAGE, (data) => sendGossipMessage(io, socket, data));
 
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
