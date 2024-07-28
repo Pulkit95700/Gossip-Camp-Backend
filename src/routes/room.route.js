@@ -12,6 +12,8 @@ import {
   getTrendingRooms,
   getRecentlyAddedRooms,
   getRoomProfileDetails,
+  getGossipMessagesInRoom,
+  getRoomMembers,
 } from "../controllers/room.controller.js";
 import auth from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -45,5 +47,7 @@ router
 
 router.route("/trending-rooms").get(auth, getTrendingRooms);
 router.route("/recent-rooms").get(auth, getRecentlyAddedRooms);
+router.route("/:roomId/get-gossip-messages").get(auth, getGossipMessagesInRoom);
+router.route("/:roomId/get-room-members").get(auth, getRoomMembers);
 
 export { router };

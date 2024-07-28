@@ -792,6 +792,72 @@ const getRoomProfileDetails = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getGossipMessagesInRoom = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    let { offset = 0, limit = 10 } = req.query;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const messages = await Message.find({
+      room: roomId,
+      isGossip: true,
+    })
+      .sort("-createdAt")
+      .skip(offset)
+      .limit(limit)
+      .populate("profile", "fName lName avatar username").select("-__v");
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          messages,
+        },
+        "Gossip Messages Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, err.message));
+  }
+});
+
+const getRoomMembers = asyncHandler(async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { offset = 0, limit = 10 } = req.query;
+
+    if (!roomId) {
+      return res.status(501).json(new ApiError(501, "Room Id is required"));
+    }
+
+    const members = await JoinRoom.find({
+      room: roomId,
+    })
+
+    let profiles = members.map(async (member) => {
+      const profile = await Profile.find({user: member.user}).select(
+        "-__v -updatedAt -createdAt"
+      );
+
+      console.log(profile);
+      return profile;
+    })
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        profiles,
+        "Room Members Fetched Successfully"
+      )
+    );
+  } catch (err) {
+    return res.status(501).json(new ApiError(501, err.message));
+  }
+})
+
 export {
   createPrivateRoom,
   createPublicRoom,
@@ -805,6 +871,8 @@ export {
   getTrendingRooms,
   getRoomDetails,
   getRoomProfileDetails,
+  getGossipMessagesInRoom,
+  getRoomMembers,
 };
 
 // public jo user rooms
