@@ -833,18 +833,23 @@ const getRoomMembers = asyncHandler(async (req, res, next) => {
       return res.status(501).json(new ApiError(501, "Room Id is required"));
     }
 
-    const members = await JoinRoom.find({
+    let members = await JoinRoom.find({
       room: roomId,
-    })
+    }).skip(offset).limit(limit)
 
-    let profiles = members.map(async (member) => {
-      const profile = await Profile.find({user: member.user}).select(
-        "-__v -updatedAt -createdAt"
-      );
+    members = members.map((member) => member.user)
 
-      console.log(profile);
-      return profile;
-    })
+    let profiles = [];
+
+    for (let i = 0; i < members.length; i++) {
+      const profile = await Profile.findOne({
+        user: members[i],
+      }).select("-__v -updatedAt -createdAt -user");
+
+      if(profile){
+        profiles.push(profile);
+      }
+    }
 
     return res.status(200).json(
       new ApiResponse(
